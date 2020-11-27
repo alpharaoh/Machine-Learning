@@ -1,2 +1,2 @@
 # Machine-Learning
-A place to share my studies and future research and dev
+A place to share my studies, future research and dev
