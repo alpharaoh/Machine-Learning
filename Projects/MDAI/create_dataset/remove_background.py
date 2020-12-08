@@ -1,15 +1,15 @@
+#28, 255, 0
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
 # alpha values included
-white = [255, 255, 255, 255]
-green = [64, 253, 47, 255]
 green_example = [62, 255, 8, 255]
 
-lower_green = [70, 255, 70, 255]
-upper_green = [0, 255, 0, 255]
+lower_green = [0, 255, 0, 255]
+upper_green = [150, 255, 150, 255]
 
 transparant = [0, 0, 0, 0]
 
@@ -41,25 +41,15 @@ def crop_image(image: complex):
 
    return cropped
 
-def remove_background(image: complex, background_RGBA: tuple, change_to_RGBA: tuple, crop=False):
+def remove_background(image: complex, background_RGBA_lower: tuple, background_RGBA_upper: tuple, change_to_RGBA: tuple, crop=False):
    # convert image from BGR to RGBA
    image_rgba = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA).copy()
 
-   # print(image_rgba)
-
-   # image_rgba[green11] = [0, 0, 0, 0]
-
-   # plt.imshow(image_rgba)
-   # plt.show()
-   
-   # exit()
+   # if green in bounds
+   arg = np.logical_and(image_rgba <= background_RGBA_upper, image_rgba >= background_RGBA_lower)
 
    # convert all background_RGBA coloured pixels to change_to_RGBA colour
-   image_rgba[np.all(image_rgba == background_RGBA, axis=-1)] = change_to_RGBA
-
-
-   #image_rgba[np.all(np.logical_and(image_rgba > lower_green, image_rgba < upper_green), axis=-1)] = change_to_RGBA
-
+   image_rgba[np.all(arg, axis=-1)] = change_to_RGBA
 
    if crop:
       return crop_image(image_rgba)
@@ -71,9 +61,9 @@ if __name__ == '__main__':
 
    img = cv2.imread(path) #returns BGR NumPy array
 
-   final_image = remove_background(img, green_example, transparant, crop=True)
+   final_image = remove_background(img, lower_green, upper_green, transparant, crop=True)
    final_image = remove_edge_noise(final_image, tol=2)
-   save_image(final_image, path="../dataset/output/output_parsed_frames/", name="test2")
+   save_image(final_image, path="../dataset/output/output_parsed_frames/", name="test3")
 
 
 # if __name__ == '__main__':
