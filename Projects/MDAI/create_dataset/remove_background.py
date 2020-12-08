@@ -5,7 +5,12 @@ from PIL import Image
 
 # alpha values included
 white = [255, 255, 255, 255]
-green = [0, 254, 48, 255]
+green = [64, 253, 47, 255]
+green_example = [62, 255, 8, 255]
+
+lower_green = [70, 255, 70, 255]
+upper_green = [0, 255, 0, 255]
+
 transparant = [0, 0, 0, 0]
 
 def save_image(image: complex, path="./", name="remove_background_image"):
@@ -23,6 +28,7 @@ def remove_edge_noise(image, tol=2):
 def crop_image(image: complex):
    # get value of True or False depending on if pixel should be removed or not
    mask = image > transparant
+
    # find co-ordinates of non-transparant pixels 
    co_ords = np.argwhere(mask)
 
@@ -39,17 +45,39 @@ def remove_background(image: complex, background_RGBA: tuple, change_to_RGBA: tu
    # convert image from BGR to RGBA
    image_rgba = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA).copy()
 
-   # convert all white pixels to transparant
+   # print(image_rgba)
+
+   # image_rgba[green11] = [0, 0, 0, 0]
+
+   # plt.imshow(image_rgba)
+   # plt.show()
+   
+   # exit()
+
+   # convert all background_RGBA coloured pixels to change_to_RGBA colour
    image_rgba[np.all(image_rgba == background_RGBA, axis=-1)] = change_to_RGBA
+
+
+   #image_rgba[np.all(np.logical_and(image_rgba > lower_green, image_rgba < upper_green), axis=-1)] = change_to_RGBA
+
 
    if crop:
       return crop_image(image_rgba)
 
    return image_rgba
 
+if __name__ == '__main__':
+   path = "../dataset/output/frames/frame_0.png"
+
+   img = cv2.imread(path) #returns BGR NumPy array
+
+   final_image = remove_background(img, green_example, transparant, crop=True)
+   final_image = remove_edge_noise(final_image, tol=2)
+   save_image(final_image, path="../dataset/output/output_parsed_frames/", name="test2")
+
 
 # if __name__ == '__main__':
-#    path = "../dataset/input/mundo_green.png"
+#    path = "../dataset/input/example.png"
 #    img = cv2.imread(path) #returns BGR NumPy array
 
 #    final_image = remove_background(img, green, transparant, crop=True)
