@@ -1,6 +1,7 @@
 import cv2
 
 # before running this method, we should remove duplicate frames using FFmpeg 
+# command: ffmpeg -i input.mp4 -vf mpdecimate,setpts=N/FRAME_RATE/TB out.mp4
 
 def save_all_frames(video_path: str, video_name: str, output_path: str):
    video_capture = cv2.VideoCapture(f"{video_path}/{video_name}")
@@ -22,7 +23,7 @@ def save_all_frames(video_path: str, video_name: str, output_path: str):
 
 if __name__ == '__main__':
    video_path = "../dataset/input/teemogg_vid_capture/"
-   video_name = "out.avi"
+   video_name = "standard_mundo_idle1.mp4"
    output_path = "../dataset/output/frames/"
 
    save_all_frames(video_path, video_name, output_path)    

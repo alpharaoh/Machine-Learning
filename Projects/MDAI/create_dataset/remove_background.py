@@ -1,5 +1,4 @@
-#28, 255, 0
-
+import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +7,7 @@ from PIL import Image
 # alpha values included
 green_example = [62, 255, 8, 255]
 
-lower_green = [0, 255, 0, 255]
+lower_green = [0, 240, 0, 255]
 upper_green = [150, 255, 150, 255]
 
 transparant = [0, 0, 0, 0]
@@ -33,8 +32,8 @@ def crop_image(image: complex):
    co_ords = np.argwhere(mask)
 
    # bounding box of non-transparant pixels.
-   x0, y0, a0 = co_ords.min(axis=0)
-   x1, y1, a1 = co_ords.max(axis=0) + 1   # slices are exclusive at the top
+   x0, y0, _ = co_ords.min(axis=0)
+   x1, y1, _ = co_ords.max(axis=0) + 1   # slices are exclusive at the top
 
    # crop image based on our bounding box
    cropped = image[x0:x1, y0:y1]
@@ -56,20 +55,37 @@ def remove_background(image: complex, background_RGBA_lower: tuple, background_R
 
    return image_rgba
 
+# there are dark green lines outside the frames that ruins the main crop
+def crop_outer_green_box(image, crop_amount=50): 
+   # get image resolution
+   y, x, _ = image.shape
+
+   # get cropped resolution
+   crop_x, crop_y = x - crop_amount, y - crop_amount
+
+   # get start point to crop at
+   start_x = x // 2 - (crop_y // 2)
+   start_y = y // 2 - (crop_y // 2)
+
+   return image[start_y:start_y + crop_y, start_x:start_x + crop_x]
+
+def load_images_and_run_all():
+   count = 0
+
+   for file_name in os.listdir(folder_path):
+
+      # read all images in folder
+      image = cv2.imread(os.path.join(folder_path, file_name))
+      
+      if image is not None:
+         # create image
+         final_image = crop_outer_green_box(image, crop_amount=100)
+         final_image = remove_background(final_image, lower_green, upper_green, transparant, crop=True)
+         final_image = remove_edge_noise(final_image, tol=2)
+
+         save_image(final_image, path="/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/", name=f"mundo_{count}")
+         count += 1
+
 if __name__ == '__main__':
-   path = "../dataset/output/frames/frame_0.png"
-
-   img = cv2.imread(path) #returns BGR NumPy array
-
-   final_image = remove_background(img, lower_green, upper_green, transparant, crop=True)
-   final_image = remove_edge_noise(final_image, tol=2)
-   save_image(final_image, path="../dataset/output/output_parsed_frames/", name="test3")
-
-
-# if __name__ == '__main__':
-#    path = "../dataset/input/example.png"
-#    img = cv2.imread(path) #returns BGR NumPy array
-
-#    final_image = remove_background(img, green, transparant, crop=True)
-#    final_image = remove_edge_noise(final_image, tol=2)
-#    save_image(final_image, path="../dataset/output/", name="test2")
+   folder_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/frames/"
+   load_images_and_run_all()
