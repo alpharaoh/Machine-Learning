@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from matplotlib.patches import Rectangle
+import tensorflow as tf
 #import torch
-
 
 def get_normalized_bbox(x_position, y_position, width, height, image_size):
    """
    This function will locate the bounding box of foreground (e.g. Mundo) and then
-   normalise the values from 0-1. This is important since YOLO uses a specific .txt format
+   normalise the values from 0-1. This is important step to get YOLO format correct
    """
    # get background screen resolution (e.g. 1920, 1080)
    x_image_size = image_size[0]  
@@ -37,6 +37,11 @@ def get_normalized_bbox(x_position, y_position, width, height, image_size):
 
 
 def merge_background_foreground(background, foreground: list, resize_mult=0, move_position=(0, 0)):
+   """
+   This function will use a move_position tuple to move and paste a foreground object 
+   to the background and can resize the foreground object using a resize multiplier.
+   It returns the image and the foreground's bounding box.
+   """
    # get position of where the foreground should move to
    x_position, y_position = move_position
 
@@ -56,9 +61,10 @@ def merge_background_foreground(background, foreground: list, resize_mult=0, mov
       (x_position, y_position), 
       foreground_resized)
    
-   # get width and height of foreground image
+   # get width and height of foreground image. 
    _, _, width, height = foreground_resized.getbbox()
    
+   # create bounding box
    bbox = get_normalized_bbox(
       x_position, 
       y_position, 
@@ -66,36 +72,45 @@ def merge_background_foreground(background, foreground: list, resize_mult=0, mov
       height, 
       background_size)
 
-   draw_bounding_box_for_testing(background, bbox)
+   return background, bbox
 
 
 def draw_bounding_box_for_testing(image: Image, bbox: tuple):
-   plt.gca().add_patch(Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], linewidth=1, edgecolor="r", facecolor="none"))
+   #plt.gca().add_patch(Rectangle((bbox[0], bbox[1]), bbox[2], bbox[3], linewidth=1, edgecolor="r", facecolor="none"))
+   
+   image_rgba = np.array(image)
+   image_rgba = cv2.cvtColor(image_rgba, cv2.COLOR_BGR2RGBA).copy()
 
-   plt.imshow(image)
+   bbox_tensor = tf.convert_to_tensor(np.asarray(bbox + (0, )), dtype=tf.float32)
+   colour = tf.convert_to_tensor(np.asarray((255, 0, 0, 255)), dtype=tf.float32)
+
+   print(tf.rank(image_rgba), "\n\n")
+   image_with_boxes = tf.image.draw_bounding_boxes(image_rgba, bbox_tensor, colour)
+   print(image_with_boxes)
+   plt.imshow(image_with_boxes)
    plt.show()
 
 
 def stretch_for_yolo():
    pass
 
-def save_image_with_YOLO_bb_txt():
+def save_image_with_YOLO_bb_txt(image, bbox, annotations_path, images_path):
    pass
 
 if __name__ == '__main__':
    # example
    background_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/frame_0.png"
    mundo_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/mundo_500.png"
-
-   #background_image = cv2.imread(background_path)
-   #mundo_image = cv2.imread(mundo_path)
+   output_path_annotations = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/merged_images/annotations/"
+   output_path_images = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/merged_images/images/"
    
    background_image = Image.open(background_path)
    mundo_image = Image.open(mundo_path)
 
-   merge_background_foreground(background_image, mundo_image, resize_mult=0.34, move_position=(600, 100))
+   image, bbox = merge_background_foreground(
+      background_image,
+      mundo_image, 
+      resize_mult=0.34, 
+      move_position=(600, 100))
 
-   # plt.imshow(mundo_image)
-   # plt.show()
-
-
+   draw_bounding_box_for_testing(image, bbox)
