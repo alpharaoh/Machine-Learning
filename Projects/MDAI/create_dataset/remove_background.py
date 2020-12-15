@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 """
-This program will handle parsing an image data set by removing the background and cropping the images
-of some target folder and outputting the new images in another folder
+This program will handle parsing an image data set by removing the background and cropping 
+the images of some target folder and outputting the new images in another folder
 """
 
 #RED, BLUE, GREEN, ALPHA
