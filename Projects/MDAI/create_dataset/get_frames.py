@@ -23,7 +23,7 @@ def save_all_frames(video_path: str, video_name: str, output_path: str):
 
 if __name__ == '__main__':
    video_path = "../dataset/input/teemogg_vid_capture/"
-   video_name = "standard_mundo_idle1.mp4"
-   output_path = "../dataset/output/frames/"
+   video_name = "baron_pit.mp4"
+   output_path = "../dataset/output/baron_pit_frames/"
 
-   save_all_frames(video_path, video_name, output_path)    
+   save_all_frames(video_path, video_name, output_path)
