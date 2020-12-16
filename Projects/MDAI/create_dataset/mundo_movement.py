@@ -1,3 +1,8 @@
+"""
+This is the main controller for the Mundo character. These functions allow the AI 
+to perform actions in game.
+"""
+
 import pynput.mouse
 from pynput.mouse import Button
 import pynput.keyboard
@@ -22,8 +27,6 @@ class MundoController():
    def point_use_ability(self, des_position_on_screen: tuple, ability_key="q"):
       self.mouse.position = des_position_on_screen
       self.keyboard.press(ability_key)
-
-   #405 445
 
 if __name__ == '__main__':
    mundo = MundoController()

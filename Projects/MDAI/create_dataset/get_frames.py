@@ -1,20 +1,25 @@
+"""
+This program takes in a video and splits it up into frames and saves these 
+images in a target folder
+"""
+
 import cv2
 
 # before running this method, we should remove duplicate frames using FFmpeg 
 # command: ffmpeg -i input.mp4 -vf mpdecimate,setpts=N/FRAME_RATE/TB out.mp4
 
-def save_all_frames(video_path: str, video_name: str, output_path: str):
+def save_all_frames(video_path: str, video_name: str, output_path: str, file_name: str, starting_count=0):
    video_capture = cv2.VideoCapture(f"{video_path}/{video_name}")
 
    # read frame data
    success, image = video_capture.read()
 
-   count = 0
+   count = starting_count
 
    # if success = False, this means that the video has ended
    while success:
       # save image
-      cv2.imwrite(f"{output_path}/frame_{count}.png", image)
+      cv2.imwrite(f"{output_path}/{file_name}_{count}.png", image)
       success, image = video_capture.read()
       
       # increase count so that files don't get overwritten
@@ -23,7 +28,7 @@ def save_all_frames(video_path: str, video_name: str, output_path: str):
 
 if __name__ == '__main__':
    video_path = "../dataset/input/teemogg_vid_capture/"
-   video_name = "baron_pit.mp4"
-   output_path = "../dataset/output/baron_pit_frames/"
+   video_name = "axe.mp4"
+   output_path = "../dataset/output/frames/axe/"
 
-   save_all_frames(video_path, video_name, output_path)
+   save_all_frames(video_path, video_name, output_path, "axe_frame")
