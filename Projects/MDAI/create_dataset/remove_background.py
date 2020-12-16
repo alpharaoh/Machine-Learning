@@ -1,13 +1,13 @@
+"""
+This program will handle parsing an image data set by removing the background and cropping 
+the images of some target folder and outputting the new images in another folder
+"""
+
 import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-
-"""
-This program will handle parsing an image data set by removing the background and cropping 
-the images of some target folder and outputting the new images in another folder
-"""
 
 #RED, BLUE, GREEN, ALPHA
 
@@ -17,7 +17,7 @@ UPPERGREEN = [150, 255, 150, 255]
 
 TRANSPARANT = [0, 0, 0, 0]
 
-def remove_edge_noise(image, tol=2):
+def remove_edge_noise(image: Image, tol=2):
    """
    After removing background, there are still some (green) noise around the edges. Using the
    cv2 erode method will erode the edges to try and remove these redundant pixels
@@ -28,13 +28,13 @@ def remove_edge_noise(image, tol=2):
    # erode boundary pixels
    return cv2.erode(image, kernel, iterations=1)
 
-def crop_image(image: complex):
+def crop_image(image: Image):
    """
    This function will calculate a bounding box in respect to where the edges of the image is
    and crop accordingly. 
    """
    # get value of True or False depending on if pixel should be removed or not
-   mask = image > TRANSPARANT
+   mask = (image > TRANSPARANT)
 
    # find co-ordinates of non-transparant pixels 
    co_ords = np.argwhere(mask)
@@ -48,7 +48,7 @@ def crop_image(image: complex):
 
    return cropped
 
-def crop_outer_green_box(image, crop_amount=50): 
+def crop_outer_green_box(image: Image, crop_amount=50, right_x_bias=0): 
    """
    This function returns an image which is slightly cropped inwards from all sides. This is
    necassery since video compression in this case created dark (green) lined artifacts on 
@@ -64,11 +64,11 @@ def crop_outer_green_box(image, crop_amount=50):
    start_x = x // 2 - (crop_y // 2)
    start_y = y // 2 - (crop_y // 2)
 
-   return image[start_y:start_y + crop_y, start_x:start_x + crop_x]
+   return image[start_y:start_y + crop_y, start_x:start_x + crop_x - right_x_bias]
 
-def remove_background(image: complex, background_RGBA_lower: tuple, background_RGBA_upper: tuple, change_to_RGBA: tuple, crop=False):
+def remove_background(image: Image, background_RGBA_lower: tuple, background_RGBA_upper: tuple, change_to_RGBA: tuple, crop=False):
    """
-   This function will return a perfectly cropped RGBA image after changing pixels with a bounded 
+   This function will return a perfectly cropped (optional) RGBA image after changing pixels with a bounded 
    colour [background_RGBA_lower -> background_RGBA_upper] to transparant
    """
    # convert image from BGR to RGBA
@@ -85,10 +85,10 @@ def remove_background(image: complex, background_RGBA_lower: tuple, background_R
 
    return image_rgba
 
-def load_images_and_run_all():
+def load_images_and_run_all(folder_path):
    """
    This method will create and save cropped and chroma keyed png images from an input dataset of 
-   images with a plain coloured background 
+   images with a plain coloured background into a target folder
    """
    count = 0
 
@@ -99,18 +99,20 @@ def load_images_and_run_all():
       
       if image is not None:
          # create image
-         final_image = crop_outer_green_box(image, crop_amount=100)
+         final_image = crop_outer_green_box(image, crop_amount=200, right_x_bias=400)
+         plt.imshow(final_image)
+         plt.show()
          final_image = remove_background(final_image, LOWERGREEN, UPPERGREEN, TRANSPARANT, crop=True)
          final_image = remove_edge_noise(final_image, tol=2)
 
-         save_image(final_image, path="/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/", name=f"mundo_{count}")
+         save_image(final_image, path="/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/axe/", name=f"axe_{count}")
          count += 1
 
-def save_image(image: complex, path="./", name="remove_background_image"):
+def save_image(image: Image, path="./", name="remove_background_image_test"):
    # convert NumPy array to Pillow Image
    new_im = Image.fromarray(image)
    new_im.save(f"{path}/{name}.png")
 
 if __name__ == '__main__':
-   folder_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/frames/"
-   load_images_and_run_all()
+   folder_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/frames/axe/"
+   load_images_and_run_all(folder_path)
