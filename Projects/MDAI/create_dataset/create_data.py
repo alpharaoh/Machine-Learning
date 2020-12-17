@@ -1,8 +1,8 @@
 """
 This program will take a background image, and some foreground object images 
 and merge these images together. It will also calculate the bounding boxes for 
-each foreground object and save the output image and respective boundbox text file
-in a target folder
+each foreground object and save the output image and respective boundbox text 
+file in a target folder
 """
 
 #10-13
@@ -21,6 +21,7 @@ print("Loaded...")
 
 class CreateDataset():
    def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path):
+      self.bboxes = []
       self.x_mins = []
       self.y_mins = []
       self.x_maxes = []
@@ -84,11 +85,11 @@ class CreateDataset():
 
       return random_x, random_y
 
-   def merge_background_foreground(self, background: Image, foreground: list, resize_mult=0, count=0, bbox_list=[]):
+   def merge_background_foreground(self, background: Image, foreground: list, resize_mult=0, count=0):
       """
-      This function will use a move_position tuple to move and paste a foreground object 
-      to the background and can resize the foreground object using a resize multiplier.
-      It returns the image and the foreground's bounding box.
+      This function will use a move_position tuple to move and paste a foreground 
+      object to the background and can resize the foreground object using a resize 
+      multiplier. It returns the image and the foreground's bounding box.
 
       The function is recursive depending on the size of foreground
       """
@@ -130,32 +131,34 @@ class CreateDataset():
          background_size)
 
       # save our bounding box
-      bbox_list.append(bbox)
+      self.bboxes.append(bbox)
 
       # run function again if we havn't looped through all images in foreground
       if count < len(foreground)-1:
          # incrememnt count
-         self.merge_background_foreground(background, foreground, resize_mult=resize_mult, count=count+1, bbox_list=bbox_list)
+         self.merge_background_foreground(background, foreground, resize_mult=resize_mult, count=count+1)
 
-      return background, bbox_list
+      return background
 
 
    def draw_bounding_box_for_testing(self, image: Image):
       """
-      WIP
+      This method will show the bounding boxes around each object image in the background 
+      image. This is used for testing purposes.
       """
-
       plt.imshow(image)
 
       for i in range(len(self.widths)):
          plt.gca().add_patch(Rectangle((self.x_mins[i], self.y_mins[i], self.x_maxes[i], self.y_maxes[i]), self.widths[i], self.heights[i], linewidth=1, edgecolor="r", facecolor="none"))
 
       plt.show()
+      plt.gca().remove()
 
 
    def stretch_for_YOLO(self, image: Image, size=(320,320)):
       """
-      YOLO trains on square images that are multiples of 32. e.g. 320x320, 352x352, 416x416, 608x608, etc.
+      YOLO trains on square images that are multiples of 32. e.g. 320x320, 
+      352x352, 416x416, 608x608, etc.
       """
       return image.resize(size)
 
@@ -209,13 +212,15 @@ class CreateDataset():
                   # if occurances is 2, there will be 2 mundos and 2 axes 
                   for _ in range(occurances):
                      # create image
-                     image, bboxes = self.merge_background_foreground(
+                     image = self.merge_background_foreground(
                         image,
                         [mundo_image, axe_image], 
                         resize_mult=0.30)
 
-                  print(bboxes, "\n", len(bboxes))
-                     
+                  
+                  print(self.bboxes, "\n", len(self.bboxes))
+                  self.bboxes.clear()
+
                   self.draw_bounding_box_for_testing(image)
 
                   #save_image_with_YOLO_bb_txt(image, bbox, output_path, 1, file_name=f"final_{i}_{j}")
