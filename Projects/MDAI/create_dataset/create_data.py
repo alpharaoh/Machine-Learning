@@ -7,9 +7,11 @@ file in a target folder
 
 #10-13
 
+#
+
 import cv2
 import os
-import numpy as np
+#import numpy as np
 import random
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -20,7 +22,7 @@ from matplotlib.patches import Rectangle
 print("Loaded...")
 
 class CreateDataset():
-   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path):
+   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path):
       self.bboxes = []
       self.ids = []
       self.x_mins = []
@@ -29,10 +31,22 @@ class CreateDataset():
       self.y_maxes = []
       self.widths = []
       self.heights = []
-      self.background_path_folder = background_path_folder
-      self.mundo_path_folder = mundo_path_folder
-      self.axe_path_folder = axe_path_folder
+      self.current_background_image_index = 0
       self.output_path = output_path
+      self.current_background_image_index = 0
+      self.axe_path_folder = axe_path_folder
+      self.mundo_path_folder = mundo_path_folder
+      self.background_path_folder = background_path_folder
+      self.baron_bboxes = self.get_baron_bbox(baronpit_bbox_path)
+      
+   def get_baron_bbox(self, baronpit_bbox_path):
+      baronpit_bbox_file = open(baronpit_bbox_path, "r")
+      baronpit_content = baronpit_bbox_file.read().strip().split("\n")
+
+      list_of_bbox_for_baronpit = [bbox.split(", ") for bbox in baronpit_content]
+      baronpit_bbox_file.close()
+     
+      return list_of_bbox_for_baronpit
 
    def get_normalized_bbox(self, x_position: int, y_position: int, width: int, height: int, image_size: tuple):
       """
@@ -78,8 +92,7 @@ class CreateDataset():
       # x_min_bound, x_max_bound = 200, background_size[0]-400
       # y_min_bound, y_max_bound = 170, background_size[1]-250
 
-      x_min_bound, x_max_bound = 450, 1060
-      y_min_bound, y_max_bound = 380, 760
+      x_min_bound, y_min_bound, x_max_bound, y_max_bound  = [int(value) for value in self.baron_bboxes[self.current_background_image_index]]
       
       random_x = random.randint(x_min_bound, x_max_bound)
       random_y = random.randint(y_min_bound, y_max_bound)
@@ -97,6 +110,7 @@ class CreateDataset():
 
       # get image we are going to add to background image
       foreground_object = foreground[count][0]
+      print(foreground_object)
 
       # get the object id - needed for identifying the object in bounding box
       object_id = foreground[count][1]
@@ -155,7 +169,9 @@ class CreateDataset():
 
       # loop through amount of images in foreground and add a rectangle to it
       for i in range(len(self.widths)):
-         plt.gca().add_patch(Rectangle((self.x_mins[i], self.y_mins[i], self.x_maxes[i], self.y_maxes[i]), self.widths[i], self.heights[i], linewidth=1, edgecolor="r", facecolor="none"))
+         plt.gca().add_patch(Rectangle((self.x_mins[i], self.y_mins[i], self.x_maxes[i], self.y_maxes[i]), 
+                                        self.widths[i], self.heights[i], 
+                                        linewidth=1, edgecolor="r", facecolor="none"))
       
       plt.show()
 
@@ -204,12 +220,38 @@ class CreateDataset():
 
       return random_mundo_image, random_axe_image
 
+   def images_to_use_with_probability(self, full_images: list):
+      """
+      40% chance to get all 4 images
+      30% chance to get 3 images
+      20% chance to get 2 images
+      10% chance to get 1 image
+      """
+
+      random_num = random.randint(1, 100)
+
+      #print(full_images)
+
+      if random_num <= 10:
+         return [full_images[0]]
+      
+      elif random_num > 10 and random_num <= 30:
+         return [full_images[0], full_images[2]]
+      
+      elif random_num > 30 and random_num <= 60:
+         return [full_images[0], full_images[1], full_images[2]]
+
+      else:
+         return full_images
+
    def load_images_and_run_all(self, occurances=1):
       """
       WIP
       """
       # loop through background path folder to get file names
       for i, file_name in enumerate(os.listdir(self.background_path_folder)):
+
+         self.current_background_image_index = i
 
          # loop through mundo images path folder to get file names
          for j, mundo_file_name in enumerate(os.listdir(self.mundo_path_folder)):
@@ -245,11 +287,12 @@ class CreateDataset():
                      # create image
                      image = self.merge_background_foreground(
                         image,
-                        [[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]], 
-                        resize_mult=0.30)
+                        self.images_to_use_with_probability([[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]]),
+                        resize_mult=0.29)
 
-                  # self.draw_bounding_box_for_testing(image)
-                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j}")
+                  self.draw_bounding_box_for_testing(image)
+                  
+                  # self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j}")
 
                   self.cleanup()
 
@@ -258,8 +301,9 @@ if __name__ == '__main__':
    mundo_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/mundo/"
    axe_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/axe/"
    output_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/merged_images/"
+   baronpit_bbox_file_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/baron_pit_bbox.txt"
 
    #save_image_with_YOLO_bb_txt(stretch_for_YOLO(image), bbox, output_path, 1)
-   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path)
+   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_file_path)
 
    create.load_images_and_run_all()
