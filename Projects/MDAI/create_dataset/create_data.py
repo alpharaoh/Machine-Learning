@@ -22,6 +22,7 @@ print("Loaded...")
 class CreateDataset():
    def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path):
       self.bboxes = []
+      self.ids = []
       self.x_mins = []
       self.y_mins = []
       self.x_maxes = []
@@ -77,8 +78,8 @@ class CreateDataset():
       # x_min_bound, x_max_bound = 200, background_size[0]-400
       # y_min_bound, y_max_bound = 170, background_size[1]-250
 
-      x_min_bound, x_max_bound = 500, 1300
-      y_min_bound, y_max_bound = 280, 930
+      x_min_bound, x_max_bound = 450, 1060
+      y_min_bound, y_max_bound = 380, 760
       
       random_x = random.randint(x_min_bound, x_max_bound)
       random_y = random.randint(y_min_bound, y_max_bound)
@@ -95,7 +96,11 @@ class CreateDataset():
       """
 
       # get image we are going to add to background image
-      foreground_object = foreground[count]
+      foreground_object = foreground[count][0]
+
+      # get the object id - needed for identifying the object in bounding box
+      object_id = foreground[count][1]
+      self.ids.append(object_id)
 
       # get x, y of foreground and background
       foreground_size = foreground_object.size
@@ -148,12 +153,20 @@ class CreateDataset():
       """
       plt.imshow(image)
 
+      # loop through amount of images in foreground and add a rectangle to it
       for i in range(len(self.widths)):
          plt.gca().add_patch(Rectangle((self.x_mins[i], self.y_mins[i], self.x_maxes[i], self.y_maxes[i]), self.widths[i], self.heights[i], linewidth=1, edgecolor="r", facecolor="none"))
-
+      
       plt.show()
-      plt.gca().remove()
 
+   def cleanup(self):
+      """
+      This method will clear all values from the last image. This is needed for when
+      we are displaying the bounding boxes so to make sure there are no redundant
+      bounding boxes from the last image on the new image  
+      """
+      self.bboxes.clear()
+      self.ids, self.x_mins, self.y_mins, self.x_maxes, self.y_maxes, self.widths, self.heights = [[] for i in range(7)]
 
    def stretch_for_YOLO(self, image: Image, size=(320,320)):
       """
@@ -162,19 +175,34 @@ class CreateDataset():
       """
       return image.resize(size)
 
-   def save_image_with_YOLO_bb_txt(self, image: Image, bbox: tuple, output_path: str, object_id: int, file_name="test"):
+   def save_image_with_YOLO_bb_txt(self, image: Image, file_name="test"):
       """
-      WIP
+      This method creates a YOLO formatted text file for the bounding boxes and 
+      respective id's and also saves the final images and the text file in the 
+      target folder
       """
-      # get file name
-      # mundo_name = mundo_path.split("/")[-1:][0].replace(".png", "")
-      content = f"{object_id} {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}"
-
       txt_file = open(f"{output_path}/{file_name}.txt", "w")
-      txt_file.write(content)
+
+      # loop through amount of images in foreground
+      for i, bbox in enumerate(self.bboxes):
+         content = f"{self.ids[i]} {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}\n"
+         txt_file.write(content)
+
       txt_file.close()
 
       image.save(f"{output_path}/{file_name}.jpg")
+
+   def get_random_images(self, mundo_images_amount: int, axe_images_amount: int):
+      """
+      This function returns a random mundo image and a random axe image
+      """
+      random_mundo_index = random.randint(0, mundo_images_amount)
+      random_axe_index = random.randint(0, axe_images_amount)
+
+      random_mundo_image = Image.open(f"{self.mundo_path_folder}/mundo_{random_mundo_index}.png")
+      random_axe_image = Image.open(f"{self.axe_path_folder}/axe_{random_axe_index}.png")
+
+      return random_mundo_image, random_axe_image
 
    def load_images_and_run_all(self, occurances=1):
       """
@@ -186,16 +214,19 @@ class CreateDataset():
          # loop through mundo images path folder to get file names
          for j, mundo_file_name in enumerate(os.listdir(self.mundo_path_folder)):
 
-            # get size of axe images
-            axe_sizes = len(os.listdir(axe_path_folder))-1
+            # get size of axe and mundo images
+            axe_images_amount = len(os.listdir(self.axe_path_folder))-1
+            mundo_images_amount = len(os.listdir(self.mundo_path_folder))-1
 
             # since there are less images of axe we use mod to keep looping through the axe images
-            axe_file_name = f"axe_{j % axe_sizes}.png"
+            axe_file_name = f"axe_{j % axe_images_amount}.png"
 
             try: #DS.Store files may be captured 
                background_image = Image.open(f"{self.background_path_folder}/{file_name}")
                mundo_image = Image.open(f"{self.mundo_path_folder}/{mundo_file_name}")
                axe_image = Image.open(f"{self.axe_path_folder}/{axe_file_name}")
+
+               random_mundo_image, random_axe_image = self.get_random_images(mundo_images_amount, axe_images_amount)
 
             except Exception as e:
                print(e)
@@ -214,16 +245,13 @@ class CreateDataset():
                      # create image
                      image = self.merge_background_foreground(
                         image,
-                        [mundo_image, axe_image], 
+                        [[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]], 
                         resize_mult=0.30)
 
-                  
-                  print(self.bboxes, "\n", len(self.bboxes))
-                  self.bboxes.clear()
+                  # self.draw_bounding_box_for_testing(image)
+                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j}")
 
-                  self.draw_bounding_box_for_testing(image)
-
-                  #save_image_with_YOLO_bb_txt(image, bbox, output_path, 1, file_name=f"final_{i}_{j}")
+                  self.cleanup()
 
 if __name__ == '__main__':
    background_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/"
@@ -234,4 +262,4 @@ if __name__ == '__main__':
    #save_image_with_YOLO_bb_txt(stretch_for_YOLO(image), bbox, output_path, 1)
    create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path)
 
-   create.load_images_and_run_all(occurances=2)
+   create.load_images_and_run_all()
