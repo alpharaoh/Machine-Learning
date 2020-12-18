@@ -271,7 +271,7 @@ class CreateDataset():
 
             # get size of axe and mundo images
             axe_images_amount = len(os.listdir(self.axe_path_folder))-1
-            mundo_images_amount = len(os.listdir(self.mundo_path_folder))-1
+            mundo_images_amount = len(os.listdir(self.mundo_path_folder))-2 #-2 here since there is a DSStore file
 
             # since there are less images of axe we use mod to keep looping through the axe images
             axe_file_name = f"axe_{j % axe_images_amount}.png"
@@ -301,7 +301,7 @@ class CreateDataset():
                      image = self.merge_background_foreground(
                         image,
                         self.images_to_use_with_probability([[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]]),
-                        resize_mult=0.29)
+                        resize_mult=0.28)
 
                   # self.draw_bounding_box_for_testing(image)
                   
