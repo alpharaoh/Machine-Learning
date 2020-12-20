@@ -17,8 +17,8 @@ class ImageFilters():
       This function returns an image that could have a chance to have filters on it
 
       80% chance to get no filters
-      15% chance to get one filter
-      5% chance to all filters (blur/noise)
+      10% chance to get one filter
+      10% chance to all filters (blur/noise)
       """
       # pick random number from 1 to 100
       random_num = random.randint(0, 100)
@@ -27,7 +27,7 @@ class ImageFilters():
          # return image with no changes
          return image
 
-      elif random_num > 80 and random_num <= 95:
+      elif random_num > 80 and random_num <= 90:
          # return image with at least one filter (50-50 chance)
          blur_or_noise = random.randint(0, 1)
 
@@ -67,13 +67,20 @@ class ImageFilters():
       # normalise noise image so we can safely add it to the target image
       noise = cv2.normalize(src=noise, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-      # add noise to image
-      image = cv2.add(noise, image)
+      # convert numpy to Pillow RGBA for overlay
+      noise = Image.fromarray(np.uint8(noise)).convert("RGBA")
+      image = Image.fromarray(np.uint8(image)).convert("RGBA")
 
-      # convert numpy to Pillow 
-      image = Image.fromarray(np.uint8(image))
+      # get number from 0.1 to 0.45
+      overlay_intensity = random.randint(10, 45) / 100
 
-      return image
+      # overlay noise onto image
+      final_image = Image.blend(image, noise, overlay_intensity)
+
+      # convert image back to RGB
+      final_image = final_image.convert("RGB")
+
+      return final_image
    
    def image_stretch_for_YOLO(self, image: Image, size=(320,320)):
       """
