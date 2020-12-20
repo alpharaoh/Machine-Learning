@@ -13,8 +13,9 @@ from matplotlib.patches import Rectangle
 
 from add_filters import ImageFilters
 
-print("done..")
-class CreateDataset(ImageFilters):
+print("Loaded.")
+
+class CreateDataset():
    def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path, start_pos=0, image_size=None):
       self.filters = ImageFilters()
       self.bboxes = []
@@ -312,9 +313,9 @@ class CreateDataset(ImageFilters):
                   image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
                   image = self.filters.prob_filtered_image(image)
                   
-                  self.draw_bounding_box_for_testing(image)
+                  # self.draw_bounding_box_for_testing(image)
                   
-                  # self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
+                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
 
                   self.cleanup()
 
