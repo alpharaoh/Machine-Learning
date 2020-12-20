@@ -201,8 +201,7 @@ class CreateDataset():
       we are displaying the bounding boxes so to make sure there are no redundant
       bounding boxes from the last image on the new image  
       """
-      self.bboxes.clear()
-      self.ids, self.x_mins, self.y_mins, self.x_maxes, self.y_maxes, self.widths, self.heights = [[] for i in range(7)]
+      self.ids, self.x_mins, self.y_mins, self.x_maxes, self.y_maxes, self.widths, self.heights, self.bboxes = [[] for i in range(8)]
 
 
    def save_image_with_YOLO_bb_txt(self, image: Image, file_name="test"):
@@ -313,9 +312,9 @@ class CreateDataset():
                   image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
                   image = self.filters.prob_filtered_image(image)
                   
-                  # self.draw_bounding_box_for_testing(image)
+                  self.draw_bounding_box_for_testing(image)
                   
-                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
+                  #self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
 
                   self.cleanup()
 
