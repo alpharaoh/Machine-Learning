@@ -4,7 +4,6 @@ and merge these images together. It will also calculate the bounding boxes for
 each foreground object and save the output image and respective boundbox text 
 file in a target folder
 """
-
 import cv2
 import os
 import random
@@ -12,9 +11,12 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from matplotlib.patches import Rectangle
 
+from add_filters import ImageFilters
 
-class CreateDataset():
-   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path):
+print("done..")
+class CreateDataset(ImageFilters):
+   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path, start_pos=0, image_size=None):
+      self.filters = ImageFilters()
       self.bboxes = []
       self.ids = []
       self.x_mins = []
@@ -23,6 +25,8 @@ class CreateDataset():
       self.y_maxes = []
       self.widths = []
       self.heights = []
+      self.start_pos = start_pos
+      self.image_size = image_size
       self.current_background_image_index = 0
       self.output_path = output_path
       self.current_background_image_index = 0
@@ -69,6 +73,17 @@ class CreateDataset():
       y_min = y_position
       y_max = y_position + height
 
+      # if resizing, stretch bbox
+      if not self.image_size == None:
+         x_min, x_max, y_min, y_max = self.filters.bbox_stretch_for_YOLO(
+            width, height, 
+            (x_min, x_max, y_min, y_max), 
+            size=self.image_size)
+
+         # stretch width height to allign with new bbox
+         width *= self.filters.stretch_factor_x
+         height *= self.filters.stretch_factor_y
+
       self.x_mins.append(x_min) 
       self.y_mins.append(y_min)
       self.x_maxes.append(x_max)
@@ -81,12 +96,12 @@ class CreateDataset():
       # normalise 
       x /= x_image_size
       y /= y_image_size
-      width /= x_image_size
-      height /= y_image_size
+      width_norm = width / x_image_size
+      height_norm = height / y_image_size
 
-      normalized_bbox = (x, y, width, height)
+      normalized_bbox = (x, y, width_norm, height_norm)
 
-      return normalized_bbox#torch.tensor(normalized_bbox)
+      return width, height, normalized_bbox
 
 
    def get_random_position(self, background_size: tuple):
@@ -143,19 +158,18 @@ class CreateDataset():
       # get width and height of foreground image. 
       _, _, width, height = foreground_resized.getbbox()
       
-      self.widths.append(width)
-      self.heights.append(height)
-
       # create bounding box
-      bbox = self.get_normalized_bbox(
+      width, height, bbox = self.get_normalized_bbox(
          x_position, 
          y_position, 
          width, 
          height, 
          background_size)
 
-      # save our bounding box
+      # save our new values
       self.bboxes.append(bbox)
+      self.widths.append(width)
+      self.heights.append(height)
 
       # run function again if we havn't looped through all images in foreground
       if count < len(foreground)-1:
@@ -188,14 +202,6 @@ class CreateDataset():
       """
       self.bboxes.clear()
       self.ids, self.x_mins, self.y_mins, self.x_maxes, self.y_maxes, self.widths, self.heights = [[] for i in range(7)]
-
-
-   def stretch_for_YOLO(self, image: Image, size=(320,320)):
-      """
-      YOLO trains on square images that are multiples of 32. e.g. 320x320, 
-      352x352, 416x416, 608x608, etc.
-      """
-      return image.resize(size)
 
 
    def save_image_with_YOLO_bb_txt(self, image: Image, file_name="test"):
@@ -284,7 +290,7 @@ class CreateDataset():
                random_mundo_image, random_axe_image = self.get_random_images(mundo_images_amount, axe_images_amount)
 
             except Exception as e:
-               print(e)
+               continue
 
             else:
                images_not_null = background_image is not None and mundo_image is not None
@@ -303,9 +309,12 @@ class CreateDataset():
                         self.images_to_use_with_probability([[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]]),
                         resize_mult=0.28)
 
-                  # self.draw_bounding_box_for_testing(image)
+                  image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
+                  image = self.filters.prob_filtered_image(image)
                   
-                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j}")
+                  self.draw_bounding_box_for_testing(image)
+                  
+                  # self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
 
                   self.cleanup()
 
@@ -317,6 +326,6 @@ if __name__ == '__main__':
    output_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/merged_images/"
    baronpit_bbox_file_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/baron_pit_bbox.txt"
 
-   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_file_path)
+   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_file_path, image_size=(416, 416))
 
    create.load_images_and_run_all()
