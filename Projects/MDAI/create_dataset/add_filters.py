@@ -17,8 +17,8 @@ class ImageFilters():
       This function returns an image that could have a chance to have filters on it
 
       80% chance to get no filters
-      10% chance to get one filter
-      10% chance to all filters (blur/noise)
+      15% chance to get one filter
+      5% chance to all filters (blur/noise)
       """
       # pick random number from 1 to 100
       random_num = random.randint(0, 100)
@@ -27,18 +27,18 @@ class ImageFilters():
          # return image with no changes
          return image
 
-      elif random_num > 80 and random_num <= 90:
+      elif random_num > 80 and random_num <= 95:
          # return image with at least one filter (50-50 chance)
          blur_or_noise = random.randint(0, 1)
 
          if blur_or_noise == 1:
-            return self.get_blur_image(image, radius=3)
+            return self.get_blur_image(image, radius=1)
          else:
             return self.get_noisy_image(image)
          
       else:
          # return image with both filters
-         image = self.get_blur_image(image, radius=3)
+         image = self.get_blur_image(image, radius=1)
          image = self.get_noisy_image(image)
 
          return image
@@ -63,10 +63,15 @@ class ImageFilters():
 
       # get a image of guassuan noise that has same size of image
       noise = np.random.normal(mean, std, image.shape)
+
       # normalise noise image so we can safely add it to the target image
       noise = cv2.normalize(src=noise, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
       # add noise to image
       image = cv2.add(noise, image)
+
+      # convert numpy to Pillow 
+      image = Image.fromarray(np.uint8(image))
 
       return image
    
