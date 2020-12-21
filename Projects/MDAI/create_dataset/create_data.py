@@ -17,6 +17,7 @@ print("Loaded.")
 
 class CreateDataset():
    def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path, start_pos=0, image_size=None):
+      self.flip = False
       self.filters = ImageFilters()
       self.bboxes = []
       self.ids = []
@@ -81,9 +82,13 @@ class CreateDataset():
             (x_min, x_max, y_min, y_max), 
             size=self.image_size)
 
+            
          # stretch width height to allign with new bbox
          width *= self.filters.stretch_factor_x
          height *= self.filters.stretch_factor_y
+
+      if self.flip:
+         x_min, x_max, y_min, y_max = self.filters.flip_bbox(x_min, x_max, y_min, y_max, width)
 
       self.x_mins.append(x_min) 
       self.y_mins.append(y_min)
@@ -179,6 +184,11 @@ class CreateDataset():
 
       return background
 
+   def prob_flip(self):
+      random_num = random.randint(1, 10)
+
+      if random_num == 1:
+         self.flip = True
 
    def draw_bounding_box_for_testing(self, image: Image):
       """
@@ -300,6 +310,9 @@ class CreateDataset():
                image = background_image
 
                if images_not_null:
+                  
+                  self.prob_flip()
+
                   # e.g. if there is a mundo and axe images we want to paste, 
                   # if occurances is 2, there will be 2 mundos and 2 axes 
                   for _ in range(occurances):
@@ -311,6 +324,10 @@ class CreateDataset():
 
                   image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
                   image = self.filters.prob_filtered_image(image)
+
+                  if self.flip:
+                     image = self.filters.flip_image(image)
+                     self.flip = False
                   
                   self.draw_bounding_box_for_testing(image)
                   
