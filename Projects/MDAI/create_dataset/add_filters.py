@@ -2,7 +2,7 @@
 This program handles image filters and is able to add noise and blur to an image
 It is also used to stretch images and bboxes to YOLO format
 """
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, ImageOps
 import numpy as np
 import cv2
 import random
@@ -11,6 +11,7 @@ class ImageFilters():
    def __init__(self):
       self.stretch_factor_x = None
       self.stretch_factor_y = None
+      self.width = 416
    
    def prob_filtered_image(self, image: Image):
       """
@@ -105,4 +106,16 @@ class ImageFilters():
       y_max = round(bbox[3]*self.stretch_factor_y)
 
       return x_min, x_max, y_min, y_max
+
+   def flip_bbox(self, x_min, x_max, y_min, y_max, width):
+
+      middle = self.width / 2
+
+      x_min += (middle - x_min) * 2
+      x_max += (middle - x_max) * 2
+
+      return (x_max, x_min, y_min, y_max)
+
+   def flip_image(self, image):
+         return ImageOps.mirror(image)
       
