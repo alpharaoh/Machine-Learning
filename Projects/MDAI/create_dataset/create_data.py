@@ -185,6 +185,10 @@ class CreateDataset():
       return background
 
    def prob_flip(self):
+      """
+      This method chooses whether the current image will be flipped or not. This is based
+      on a 10% chance 
+      """
       random_num = random.randint(1, 10)
 
       if random_num == 1:
