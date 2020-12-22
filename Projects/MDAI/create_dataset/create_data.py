@@ -15,8 +15,11 @@ from add_filters import ImageFilters
 
 print("Loaded.")
 
+MUNDO_ID = 0 
+AXE_ID = 1
+
 class CreateDataset():
-   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_path, start_pos=0, image_size=None):
+   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path_images, output_path_labels, baronpit_bbox_path, start_pos=0, image_size=None):
       self.flip = False
       self.filters = ImageFilters()
       self.bboxes = []
@@ -30,7 +33,8 @@ class CreateDataset():
       self.start_pos = start_pos
       self.image_size = image_size
       self.current_background_image_index = 0
-      self.output_path = output_path
+      self.output_path_images = output_path_images
+      self.output_path_labels = output_path_labels
       self.current_background_image_index = 0
       self.axe_path_folder = axe_path_folder
       self.mundo_path_folder = mundo_path_folder
@@ -65,9 +69,8 @@ class CreateDataset():
       YOLO doesn't use bounding boxes where xy is the top-left corner, but xy is the 
       center of the rectangle
       """
-      # get background screen resolution (e.g. 1920, 1080)
-      x_image_size = image_size[0]  
-      y_image_size = image_size[1]
+      # get screen resolution
+      size = self.image_size[0]
 
       # create min/max bounding box
       x_min = x_position
@@ -100,10 +103,10 @@ class CreateDataset():
       y = int(y_min + height / 2)
 
       # normalise 
-      x /= x_image_size
-      y /= y_image_size
-      width_norm = width / x_image_size
-      height_norm = height / y_image_size
+      x /= size
+      y /= size
+      width_norm = width / size
+      height_norm = height / size
 
       normalized_bbox = (x, y, width_norm, height_norm)
 
@@ -224,7 +227,7 @@ class CreateDataset():
       respective id's and also saves the final images and the text file in the 
       target folder
       """
-      txt_file = open(f"{output_path}/{file_name}.txt", "w")
+      txt_file = open(f"{self.output_path_labels}/{file_name}.txt", "w")
 
       # loop through amount of images in foreground
       for i, bbox in enumerate(self.bboxes):
@@ -233,7 +236,7 @@ class CreateDataset():
 
       txt_file.close()
 
-      image.save(f"{output_path}/{file_name}.jpg")
+      image.save(f"{self.output_path_images}/{file_name}.jpg")
 
 
    def get_random_images(self, mundo_images_amount: int, axe_images_amount: int):
@@ -323,7 +326,7 @@ class CreateDataset():
                      # create image
                      image = self.merge_background_foreground(
                         image,
-                        self.images_to_use_with_probability([[mundo_image, 1], [random_mundo_image, 1], [axe_image, 2], [random_axe_image, 2]]),
+                        self.images_to_use_with_probability([[mundo_image, MUNDO_ID], [random_mundo_image, MUNDO_ID], [axe_image, AXE_ID], [random_axe_image, AXE_ID]]),
                         resize_mult=0.28)
 
                   image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
@@ -333,9 +336,9 @@ class CreateDataset():
                      image = self.filters.flip_image(image)
                      self.flip = False
                   
-                  self.draw_bounding_box_for_testing(image)
+                  # self.draw_bounding_box_for_testing(image)
                   
-                  #self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
+                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
 
                   self.cleanup()
 
@@ -344,9 +347,10 @@ if __name__ == '__main__':
    background_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/"
    mundo_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/mundo/"
    axe_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/axe/"
-   output_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/merged_images/"
+   output_path_image = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset/images/"
+   output_path_labels = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset/labels/"
    baronpit_bbox_file_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/baron_pit_bbox.txt"
 
-   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path, baronpit_bbox_file_path, image_size=(416, 416))
+   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path_image, output_path_labels, baronpit_bbox_file_path, image_size=(416, 416), start_pos=452)
 
    create.load_images_and_run_all()
