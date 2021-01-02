@@ -2,7 +2,6 @@
 This program will handle parsing an image data set by removing the background and cropping 
 the images of some target folder and outputting the new images in another folder
 """
-
 import os
 import cv2
 import numpy as np
@@ -90,22 +89,21 @@ def load_images_and_run_all(folder_path):
    This method will create and save cropped and chroma keyed png images from an input dataset of 
    images with a plain coloured background into a target folder
    """
-   count = 0
+   count = 451
 
    for file_name in os.listdir(folder_path):
-
       # read all images in folder
       image = cv2.imread(os.path.join(folder_path, file_name))
-      
+
       if image is not None:
          # create image
          final_image = crop_outer_green_box(image, crop_amount=200, right_x_bias=400)
-         plt.imshow(final_image)
-         plt.show()
+         # plt.imshow(final_image)
+         # plt.show()
          final_image = remove_background(final_image, LOWERGREEN, UPPERGREEN, TRANSPARANT, crop=True)
          final_image = remove_edge_noise(final_image, tol=2)
 
-         save_image(final_image, path="/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/axe/", name=f"axe_{count}")
+         save_image(final_image, path="/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/mundo/", name=f"mundo_{count}")
          count += 1
 
 def save_image(image: Image, path="./", name="remove_background_image_test"):
@@ -114,5 +112,5 @@ def save_image(image: Image, path="./", name="remove_background_image_test"):
    new_im.save(f"{path}/{name}.png")
 
 if __name__ == '__main__':
-   folder_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/frames/axe/"
+   folder_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/new_pictures/mundo"
    load_images_and_run_all(folder_path)

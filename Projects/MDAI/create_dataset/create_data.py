@@ -19,26 +19,32 @@ MUNDO_ID = 0
 AXE_ID = 1
 
 class CreateDataset():
-   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path_images, output_path_labels, baronpit_bbox_path, start_pos=0, image_size=None):
-      self.flip = False
-      self.filters = ImageFilters()
-      self.bboxes = []
+   def __init__(self, background_path_folder, mundo_path_folder, axe_path_folder, output_path_images, output_path_labels, baronpit_bbox_path, cursor_path_folder, start_pos=0, image_size=None):
       self.ids = []
       self.x_mins = []
       self.y_mins = []
+      self.widths = []
+      self.bboxes = []
       self.x_maxes = []
       self.y_maxes = []
-      self.widths = []
       self.heights = []
+
+      self.flip = False
+      self.is_cursor = False
+
       self.start_pos = start_pos
       self.image_size = image_size
-      self.current_background_image_index = 0
-      self.output_path_images = output_path_images
-      self.output_path_labels = output_path_labels
-      self.current_background_image_index = 0
       self.axe_path_folder = axe_path_folder
       self.mundo_path_folder = mundo_path_folder
+      self.output_path_images = output_path_images
+      self.cursor_path_folder = cursor_path_folder
+      self.output_path_labels = output_path_labels
       self.background_path_folder = background_path_folder
+
+      self.filters = ImageFilters(width=image_size[0])
+
+      self.current_background_image_index = 0
+      
       self.baron_bboxes = self.get_baron_bbox(baronpit_bbox_path)
       
 
@@ -60,6 +66,40 @@ class CreateDataset():
      
       return list_of_bbox_for_baronpit
 
+   def paste_cursor(self, image):
+      """
+      This function returns an image that has been altered to add 1-3 cursors. The 
+      cursors have a chance to be a normal default cursor, or a frame from the cursor
+      clicking animation
+      """
+      # chance to have more than 1 cursors
+      cursor_amount = random.randint(1, 3)
+
+      cursors = []
+
+      for _ in range(cursor_amount):
+         chance = random.randint(0, 2)
+
+         # 66.6% chance to get a default cursor 
+         if chance <= 1:
+            cursor_image = Image.open(f"{self.cursor_path_folder}/default.png")
+            cursors.append(cursor_image)
+
+         # otherwise get a random cursor animation out of 6 images
+         else:
+            random_cursor_index = random.randint(1, 6)
+            cursor_anim_image = Image.open(f"{self.cursor_path_folder}/{random_cursor_index}.png")
+            cursors.append(cursor_anim_image)
+
+      for cursor in cursors:
+         x_position, y_position = self.get_random_position()
+         
+         image.paste(
+            cursor, 
+            (x_position, y_position), 
+            cursor)
+
+      return image
 
    def get_normalized_bbox(self, x_position: int, y_position: int, width: int, height: int, image_size: tuple):
       """
@@ -113,7 +153,7 @@ class CreateDataset():
       return width, height, normalized_bbox
 
 
-   def get_random_position(self, background_size: tuple):
+   def get_random_position(self):
       """
       This function will get the bounding box for the current backround image and return 
       a random position inside the bounding box
@@ -143,14 +183,16 @@ class CreateDataset():
 
       # get the object id - needed for identifying the object in bounding box
       object_id = foreground[count][1]
-      self.ids.append(object_id)
+
+      if object_id == None:
+         self.is_cursor = True
 
       # get x, y of foreground and background
       foreground_size = foreground_object.size
       background_size = background.size
 
       # get position of where the foreground should move to
-      x_position, y_position = self.get_random_position(background_size)
+      x_position, y_position = self.get_random_position()
 
       # get new x, y of foreground after resizing 
       new_size_x, new_size_y = int(foreground_size[0] * resize_mult), int(foreground_size[1] * resize_mult)
@@ -164,21 +206,23 @@ class CreateDataset():
          (x_position, y_position), 
          foreground_resized)
       
-      # get width and height of foreground image. 
-      _, _, width, height = foreground_resized.getbbox()
-      
-      # create bounding box
-      width, height, bbox = self.get_normalized_bbox(
-         x_position, 
-         y_position, 
-         width, 
-         height, 
-         background_size)
+      if not self.is_cursor:
+         # get width and height of foreground image. 
+         _, _, width, height = foreground_resized.getbbox()
+         
+         # create bounding box
+         width, height, bbox = self.get_normalized_bbox(
+            x_position, 
+            y_position, 
+            width, 
+            height, 
+            background_size)
 
-      # save our new values
-      self.bboxes.append(bbox)
-      self.widths.append(width)
-      self.heights.append(height)
+         # save our new values
+         self.ids.append(object_id)
+         self.bboxes.append(bbox)
+         self.widths.append(width)
+         self.heights.append(height)
 
       # run function again if we havn't looped through all images in foreground
       if count < len(foreground)-1:
@@ -290,14 +334,14 @@ class CreateDataset():
          self.current_background_image_index = i
 
          # loop through mundo images path folder to get file names
-         for j, mundo_file_name in enumerate(os.listdir(self.mundo_path_folder)):
+         for j, axe_file_name in enumerate(os.listdir(self.axe_path_folder)):
 
             # get size of axe and mundo images
             axe_images_amount = len(os.listdir(self.axe_path_folder))-1
             mundo_images_amount = len(os.listdir(self.mundo_path_folder))-2 #-2 here since there is a DSStore file
 
-            # since there are less images of axe we use mod to keep looping through the axe images
-            axe_file_name = f"axe_{j % axe_images_amount}.png"
+            # since there are less images of mundos we use mod to keep looping through the axe images
+            mundo_file_name = f"mundo_{j % mundo_images_amount}.png"
 
             try: #DS.Store files may be captured 
                background_image = Image.open(f"{self.background_path_folder}/{file_name}")
@@ -310,47 +354,45 @@ class CreateDataset():
                continue
 
             else:
-               images_not_null = background_image is not None and mundo_image is not None
-
-               # since we are using .paste() method, the background image will be the final image
+               # since we are using paste method, the background image will be the final image
                # image is a clearer variable here
                image = background_image
+               
+               self.prob_flip()
 
-               if images_not_null:
-                  
-                  self.prob_flip()
+               # e.g. if there is a mundo and axe images we want to paste, 
+               # if occurances is 2, there will be 2 mundos and 2 axes 
+               for _ in range(occurances):
+                  # create image
+                  image = self.merge_background_foreground(
+                     image,
+                     self.images_to_use_with_probability([[mundo_image, MUNDO_ID], [random_mundo_image, MUNDO_ID], [axe_image, AXE_ID], [random_axe_image, AXE_ID]]),
+                     resize_mult=0.28)
 
-                  # e.g. if there is a mundo and axe images we want to paste, 
-                  # if occurances is 2, there will be 2 mundos and 2 axes 
-                  for _ in range(occurances):
-                     # create image
-                     image = self.merge_background_foreground(
-                        image,
-                        self.images_to_use_with_probability([[mundo_image, MUNDO_ID], [random_mundo_image, MUNDO_ID], [axe_image, AXE_ID], [random_axe_image, AXE_ID]]),
-                        resize_mult=0.28)
+               image = self.paste_cursor(image)
+               image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
+               image = self.filters.prob_filtered_image(image)
 
-                  image = self.filters.image_stretch_for_YOLO(image, size=self.image_size)
-                  image = self.filters.prob_filtered_image(image)
+               if self.flip:
+                  image = self.filters.flip_image(image)
+                  self.flip = False
+               
+               # self.draw_bounding_box_for_testing(image)
+               
+               self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
 
-                  if self.flip:
-                     image = self.filters.flip_image(image)
-                     self.flip = False
-                  
-                  # self.draw_bounding_box_for_testing(image)
-                  
-                  self.save_image_with_YOLO_bb_txt(image, file_name=f"final_{i}_{j + self.start_pos}")
-
-                  self.cleanup()
+               self.cleanup()
 
 
 if __name__ == '__main__':
    background_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/"
    mundo_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/mundo/"
    axe_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/output_parsed_frames/axe/"
-   output_path_image = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset/images/"
-   output_path_labels = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset/labels/"
+   cursor_path_folder = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/cursor/cropped_cursor_frames"
+   output_path_image = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset_v2/images/"
+   output_path_labels = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/mundododgeball/full_dataset_v2/labels/"
    baronpit_bbox_file_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/baron_pit_frames/baron_pit_bbox.txt"
 
-   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path_image, output_path_labels, baronpit_bbox_file_path, image_size=(416, 416), start_pos=452)
+   create = CreateDataset(background_path_folder, mundo_path_folder, axe_path_folder, output_path_image, output_path_labels, baronpit_bbox_file_path, cursor_path_folder, image_size=(1920, 1080), start_pos=452)
 
    create.load_images_and_run_all()

@@ -2,7 +2,6 @@
 This program takes in a video and splits it up into frames and saves these 
 images in a target folder
 """
-
 import cv2
 
 # before running this method, we should remove duplicate frames using FFmpeg 
@@ -27,8 +26,8 @@ def save_all_frames(video_path: str, video_name: str, output_path: str, file_nam
 
 
 if __name__ == '__main__':
-   video_path = "../dataset/input/teemogg_vid_capture/"
-   video_name = "axe.mp4"
-   output_path = "../dataset/output/frames/axe/"
+   video_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/input/teemogg_vid_capture"
+   video_name = "mundo_throw_ff.mp4"
+   output_path = "/Users/alpharaoh/Documents HDD/Machine Learning/Machine-Learning/Projects/MDAI/dataset/output/new_pictures/mundo/"
 
-   save_all_frames(video_path, video_name, output_path, "axe_frame")
+   save_all_frames(video_path, video_name, output_path, "mundo", starting_count=0)

@@ -8,10 +8,10 @@ import cv2
 import random
 
 class ImageFilters():
-   def __init__(self):
+   def __init__(self, width=416):
       self.stretch_factor_x = None
       self.stretch_factor_y = None
-      self.width = 416
+      self.width = width
    
    def prob_filtered_image(self, image: Image):
       """
@@ -108,9 +108,13 @@ class ImageFilters():
       return x_min, x_max, y_min, y_max
 
    def flip_bbox(self, x_min, x_max, y_min, y_max, width):
-
+      """
+      This function returns a bounding box after being flipped in the center
+      """
+      # find center of image
       middle = self.width / 2
 
+      # calculate position of x values reflected from center 
       x_min += (middle - x_min) * 2
       x_max += (middle - x_max) * 2
 
