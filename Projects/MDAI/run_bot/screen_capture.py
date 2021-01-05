@@ -10,18 +10,21 @@ Currently trying a method to send frame data to Flask server and run the YOLO de
 connection
 """
 import cv2
+"""
+This program will grab frames from a user display
+"""
+
 from mss import mss
 import numpy as np
 from PIL import Image
 import sys
 
 class ScreenCapture():
-   def __init__(self, x_res, y_res, monitor_number=0, debug=False):
+   def __init__(self, x_res, y_res, monitor_number=0):
       self.x_res = x_res
       self.y_res = y_res
 
-      self.debug = debug
-
+      # get monitor xy
       monitor = mss().monitors[monitor_number]
 
       self.settings = {
@@ -34,11 +37,8 @@ class ScreenCapture():
    def get_frame(self, sct):
       # get frame from screen
       frame = sct.grab(self.settings)
-      frame = Image.frombytes('RGB', (frame.size.width, frame.size.height), frame.rgb)
-      frame = cv2.cvtColor(np.array(frame), cv2.COLOR_RGB2BGR)
+
+      # convert BGR to RGB for inference
+      frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
 
       return frame
-
-if __name__ == '__main__':
-   yolo = ScreenCapture(1920, 1080, monitor_number=1, debug=True)
-   yolo.run()
