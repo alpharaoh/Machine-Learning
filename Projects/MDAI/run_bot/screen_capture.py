@@ -17,7 +17,6 @@ This program will grab frames from a user display
 from mss import mss
 import numpy as np
 from PIL import Image
-import sys
 
 class ScreenCapture():
    def __init__(self, x_res, y_res, monitor_number=0):
