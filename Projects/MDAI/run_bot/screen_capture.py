@@ -1,7 +1,6 @@
 """
 This program will grab frames from a user display
 """
-
 import cv2
 from mss import mss
 import numpy as np
