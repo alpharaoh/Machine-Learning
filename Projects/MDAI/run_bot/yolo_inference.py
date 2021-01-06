@@ -20,14 +20,14 @@ pytorch Detectors object class:
 """
 
 class YoloInference():
-   def __init__(self, weights, conf=0.6, draw_boxes=True):
-      self.draw_boxes = draw_boxes
+   def __init__(self, weights, conf=0.6):
       self.screen_capture = ScreenCapture(1920, 1080, monitor_number=1)
 
       # load our model (doesn't need yolo repo)
-      self.model = model = torch.hub.load("ultralytics/yolov5", 
-                                          "custom", 
-                                          path_or_model=weights)
+      self.model = torch.hub.load("ultralytics/yolov5", 
+                                  "custom", 
+                                  path_or_model=weights)
+
 
    def infer_real_time_frames(self):
       with mss() as sct:
@@ -36,11 +36,4 @@ class YoloInference():
             frame = self.screen_capture.get_frame(sct)
 
             # use YOLO model to infer frame
-            detection = self.model(frame, size=416)
-
-            ##### todo: Calculate projectile of axe frame frames 
-
-            yield detection.xyxy
-   
-
-YoloInference("/Users/alpharaoh/Downloads/best (1).pt").bar()
+            yield self.model(frame, size=416)
