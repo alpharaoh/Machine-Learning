@@ -1,19 +1,8 @@
 """
-This program will grab the users screen and pass the frame to YOLO for it to be able
-to infer where the mundo(s) or axe(s) are. 
-
-Todo: 
-
-- Give frame data to YOLO and get bounding boxes of objects
-
-Currently trying a method to send frame data to Flask server and run the YOLO detect.py using http
-connection
-"""
-import cv2
-"""
 This program will grab frames from a user display
 """
 
+import cv2
 from mss import mss
 import numpy as np
 from PIL import Image
