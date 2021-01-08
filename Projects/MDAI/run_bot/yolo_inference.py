@@ -25,15 +25,17 @@ class YoloInference():
 
       # load our model (doesn't need yolo repo)
       self.model = torch.hub.load("ultralytics/yolov5", 
-                                  "custom", 
-                                  path_or_model=weights)
+                                    "custom", 
+                                    path_or_model=weights)
 
 
    def infer_real_time_frames(self):
       with mss() as sct:
          while True:
             # get frame from screen grab
-            frame = self.screen_capture.get_frame(sct)
+            self.frame = self.screen_capture.get_frame(sct)
 
             # use YOLO model to infer frame
-            yield self.model(frame, size=416)
+            detection = self.model(self.frame, size=416)
+
+            yield detection
