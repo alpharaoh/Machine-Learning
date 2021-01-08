@@ -21,32 +21,43 @@ import time
 import random
 import numpy as np
 import os
+from collections import deque
 
 from yolo_inference import YoloInference
+from visualisation import Visualisation
 
 os.system("clear")
 print("Loaded modules.\n\nStarting...")
 
 
 NAMES = ["Mundo", "Axe"]
-AXE_COLOR = [0, 255, 0]
-MUNDO_COLOR = [0, 0, 255]
 
 class GameObject():
    """
-   This class 
+   This class holds data about an object in the scene such as:
+   - the position
+   - the identifier of the object
+   - the centre co-ordinates
    """
    def __init__(self, id=None, position_xywh=None):
       self.id = id
       self.position_xywh = position_xywh
+      self.centre_cords = self.get_centre_of_bbox(position_xywh)
 
-   # def __repr__(self):
-   #    super().__repr__()
-   #    return f"GameObject: {NAMES[self.id]} found at {self.position_xywh}"
+   def get_centre_of_bbox(self, bbox):
+      x1, y1, x2, y2, _ = bbox
+
+      centre_x = (x2-x1)/2 + x1
+      centre_y = (y2-y1)/2 + y1
+
+      return (centre_x, centre_y)
 
 
 class Scene():
-
+   """
+   This class holds any instances of type Object and splits them
+   up occordingly depending on if the object is a mundo or axe
+   """
    def __init__(self, mundos=[], axes=[]):
       self.mundos = mundos
       self.axes = axes
@@ -61,44 +72,36 @@ class Scene():
 
 class GameAnalysis():
    
-   def __init__(self, weights="."):
+   def __init__(self, weights=".", frame_history=3):
       assert type(weights) == str, "Weights are path of .pt weights file as Type String"
-
-      self.prev_axe_data = None
-      
       self.capture_data = YoloInference(weights)
+      self.gen = self.capture_data.infer_real_time_frames()
+
       self.x = self.capture_data.screen_capture.x_res
       self.y = self.capture_data.screen_capture.y_res
-      self.gen = self.capture_data.infer_real_time_frames()
+
+      self.visuals = Visualisation(self.x, self.y)
+      self.frame_history = frame_history
+      
+      self.prev_axe_data = deque([])
 
 
       while True:
          current_frame_data = next(self.gen)
-         objects_in_scene = self.get_state(current_frame_data)
+         objects_in_scene = self.get_state(current_frame_data)            
 
          print(f"Total objects detected: {len(objects_in_scene)}")
 
-         self.show_bboxes(objects_in_scene)
-         
+         predictions = self.get_axe_prediction()
+         ## to calcs
+
+   
+         self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
 
          objects_in_scene.clear()
 
-   def show_bboxes(self, objects_in_scene):
-      image = self.return_bbox_image(objects_in_scene.axes, "Axe", AXE_COLOR)
-      image = self.return_bbox_image(objects_in_scene.mundos, "Mundo", MUNDO_COLOR)
 
-      try:
-         cv2.imshow("visualisation", image)
-
-         if cv2.waitKey(25) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
-            exit()
-
-      except:
-         pass
-
-
-   def get_state(self, scene_data):      
+   def get_state(self, scene_data):  
       objects_bboxes = scene_data.xyxyn
       predictions = scene_data.pred
       
@@ -106,52 +109,100 @@ class GameAnalysis():
 
       scene = Scene()
 
+      axes = False
+
       for object_ in objects_list:
          obj = GameObject(id=int(object_[-1]), position_xywh=object_[:-1])
 
          if obj.id == 0: # mundo
             scene.mundos.append(obj)
          else:
+            axes = True
             scene.axes.append(obj)
    
+      if axes:
+         self.add_to_axe_frames(scene)
+
       return scene
-
-
-   def return_bbox_image(self, bboxes, label, color):
-      if bboxes:
-         for obj in bboxes:
-            image = self.draw_single_bbox(self.get_current_frame(), obj.position_xywh, label=label, color=color)
-
-         return image      
-   
-   
-   def draw_single_bbox(self, image, x, color=None, label=None, line_thickness=2):
-      """Plots one bounding box on image"""
-
-      # get pixel locations of top left and bottom right corners
-      corner1, corner2 = (int(x[0] * self.x), int(x[1] * self.y)), (int(x[2] * self.x), int(x[3] * self.y))
-
-      cv2.rectangle(image, corner1, corner2, color, thickness=line_thickness, lineType=cv2.LINE_AA)
-
-      if label:
-         font_thickness = max(line_thickness - 1, 1)
-         t_size = cv2.getTextSize(label, 0, fontScale= line_thickness / 3, thickness=font_thickness)[0]
-         corner2 = corner1[0] + t_size[0], corner1[1] - t_size[1] - 3
-         cv2.rectangle(image, corner1, corner2, color, -1, cv2.LINE_AA)  # filled
-         cv2.putText(image, label, (corner1[0], corner1[1] - 2), 0, line_thickness / 3, [225, 255, 255], thickness=font_thickness, lineType=cv2.LINE_AA)
-
-      image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-
-      return image
-
-
-   def get_centre_of_bbox(self, bbox):
-      pass
-
 
    def get_current_frame(self):
       return self.capture_data.frame
+
+   def add_to_axe_frames(self, frame_data):
+
+      if len(self.prev_axe_data) == self.frame_history:
+         self.prev_axe_data.rotate(-1)
+         self.prev_axe_data.pop()
+         self.prev_axe_data.append(frame_data)   
+
+      else:
+         self.prev_axe_data.append(frame_data)
+
+
+   def get_axe_prediction(self):
+      if len(self.prev_axe_data) < self.frame_history:
+         return
+
+      full_data = []
+
+      for i, scene in enumerate(self.prev_axe_data):
+         centre_pos = []
+         for axe_data in scene.axes:
+            centre_pos.append(axe_data.centre_cords)
+
+         full_data.append(centre_pos)
+
+      print(full_data)
+
+      current_frame = full_data[2]
+      after_curr_frame = full_data[1]
+      last_frame = full_data[0]
+
+      vectors1 = []
+      vectors2 = []
+
+      for after_axes in after_curr_frame:
+
+         for last_axes in last_frame:
+            v1 = last_axes[0] - after_axes[0]
+            v2 = last_axes[1] - after_axes[1]
+            try:
+               vectors1.append([last_axes, round(v1/v2, 2)])
+            except:
+               pass
+
+            
+      for current_axes in current_frame:
+         
+         for after_axes in after_curr_frame:
+            v1 = after_axes[0] - current_axes[0]
+            v2 = after_axes[1] - current_axes[1]
+            try:
+               vectors2.append(round(v1/v2, 2))
+            except:
+               pass
+
+      print("1",vectors1)
+      print("2",vectors2)
+
+      found_vectors = set(vectors1[1]).intersection(vectors2)
+
+      vectors_and_start_pos = []
+
+      for vector in vectors1:
+         for j in found_vectors:
+            if j == vector[1]:
+               vectors_and_start_pos.append([i[0], j])
+
+
+
+
+
+
+      
+      
       
 
+      
 
 game = GameAnalysis(weights="/Users/alpharaoh/Downloads/best (1).pt")
