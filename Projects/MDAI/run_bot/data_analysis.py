@@ -32,6 +32,8 @@ print("Loaded modules.\n\nStarting...")
 
 NAMES = ["Mundo", "Axe"]
 
+
+
 class GameObject():
    """
    This class holds data about an object in the scene such as:
@@ -52,6 +54,38 @@ class GameObject():
 
       return (centre_x, centre_y)
 
+class Grid():
+   def __init__(self, x=1920, y=1080, ratio=(16, 9), ratio_mult=2):
+      # y = mx + c
+      self.x, self.y = x, y
+
+      self.ratio_x, self.ratio_y = ratio
+      assert type(ratio_mult) == int, "ratio multiplier must be of type int"
+
+      self.squares_x = self.ratio_x * self.ratio_mult
+      self.squares_y = self.ratio_y * self.ratio_mult
+
+      self.ratio_mult = ratio_mult
+
+      self.split_grid()
+   
+   def split_grid(self):
+
+      assert (self.ratio_x / self.x)  == (self.ratio_y / self.y), f"ratio must be respective of resolution; \
+         {self.ratio_x}:{self.ratio_y} does not corrispond to the resolution {self.x}x{self.y}"
+
+      self.grid = np.zeros((self.squares_x, self.squares_y), dtype=int)
+
+   def highlight_square(self, pos=(400, 300)):
+      pos_x, pos_y = pos
+
+      square_x, square_y = pos_x/self.x, pos_y/self.y 
+
+      grid_x = int(square_x * self.squares_x) - 1
+      grid_y = int(square_y * self.squares_y) - 1
+
+      self.grid[grid_y, grid_x] = 1
+      
 
 class Scene():
    """
@@ -158,51 +192,27 @@ class GameAnalysis():
       after_curr_frame = full_data[1]
       last_frame = full_data[0]
 
-      vectors1 = []
-      vectors2 = []
+      grid = Grid(self,x, self.y)
 
-      for after_axes in after_curr_frame:
-
-         for last_axes in last_frame:
-            v1 = last_axes[0] - after_axes[0]
-            v2 = last_axes[1] - after_axes[1]
-            try:
-               vectors1.append([last_axes, round(v1/v2, 2)])
-            except:
-               pass
-
-            
-      for current_axes in current_frame:
-         
-         for after_axes in after_curr_frame:
-            v1 = after_axes[0] - current_axes[0]
-            v2 = after_axes[1] - current_axes[1]
-            try:
-               vectors2.append(round(v1/v2, 2))
-            except:
-               pass
-
-      print("1",vectors1)
-      print("2",vectors2)
-
-      found_vectors = set(vectors1[1]).intersection(vectors2)
-
-      vectors_and_start_pos = []
-
-      for vector in vectors1:
-         for j in found_vectors:
-            if j == vector[1]:
-               vectors_and_start_pos.append([i[0], j])
+      for point in current_frame:
+         pass
 
 
+      return pred
 
+   def parallel(self, line1, line2):
+      if near(gradient(line1), gradient(line2)):
+         return gradient(line1), line2
 
+   def gradient(self, line):
+      (x1, y1), (x2, y2) = line
 
+      # Ensure that the line is not vertical
+      if x1 != x2:
+         gradient = (1. / (x1 - x2)) * (y1 - y2)
+         return gradient   
 
-      
-      
-      
-
-      
+def near(self, val1, val2, rtol=1e-2, atol=1e-3):
+      return np.isclose(val1, val2, rtol=rtol, atol=atol)
 
 game = GameAnalysis(weights="/Users/alpharaoh/Downloads/best (1).pt")
