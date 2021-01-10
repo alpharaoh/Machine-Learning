@@ -33,14 +33,14 @@ print("Loaded modules.\n\nStarting...")
 NAMES = ["Mundo", "Axe"]
 
 
-
+"""
+This class holds data about an object in the scene such as:
+- the position
+- the identifier of the object
+- the centre co-ordinates
+"""
 class GameObject():
-   """
-   This class holds data about an object in the scene such as:
-   - the position
-   - the identifier of the object
-   - the centre co-ordinates
-   """
+  
    def __init__(self, id=None, position_xywh=None):
       self.id = id
       self.position_xywh = position_xywh
@@ -54,44 +54,107 @@ class GameObject():
 
       return (centre_x, centre_y)
 
+
+"""
+Todo: class description
+"""
 class Grid():
-   def __init__(self, x=1920, y=1080, ratio=(16, 9), ratio_mult=2):
-      # y = mx + c
+
+   def __init__(self, x=1920, y=1080, ratio=(16, 9), ratio_mult=2, line_tol=1):
       self.x, self.y = x, y
+
+      self.line_tol = line_tol
 
       self.ratio_x, self.ratio_y = ratio
       assert type(ratio_mult) == int, "ratio multiplier must be of type int"
 
-      self.squares_x = self.ratio_x * self.ratio_mult
-      self.squares_y = self.ratio_y * self.ratio_mult
+      self.squares_x = self.ratio_x * ratio_mult
+      self.squares_y = self.ratio_y * ratio_mult
 
-      self.ratio_mult = ratio_mult
+      self.projectile_index = 1
 
-      self.split_grid()
+      self.create_grid()
+
+
+   def increment_projectile_index(self):
+      self.projectile_index += 1
+
+   def clear_grid(self):
+      self.create_grid()
    
-   def split_grid(self):
+   def create_grid(self):
 
       assert (self.ratio_x / self.x)  == (self.ratio_y / self.y), f"ratio must be respective of resolution; \
          {self.ratio_x}:{self.ratio_y} does not corrispond to the resolution {self.x}x{self.y}"
 
       self.grid = np.zeros((self.squares_x, self.squares_y), dtype=int)
 
-   def highlight_square(self, pos=(400, 300)):
+   def change_value(self, pos, value):
+      x, y = pos
+      self.grid[y, x] = value
+
+   def add_xleftright(self, y, x, tol):
+      change_value((x, y), self.projectile_index)
+
+      if x > 0:
+         for i in range(self.line_tol):
+            grid[y, x + i + 1] = self.projectile_index
+            grid[y, x - i - 1] = self.projectile_index
+
+   def add_line(self, start_pos, gradient):
+      x, y = start_pos
+
+      # get y-intercept (c) using a rearranged version of y = mx + c
+      c = y - (gradient * x)
+
+      for y_new in range(y+1, len(grid)):
+         # get x using a rearranged version of y = mx + c
+         x = (y_new - c) / gradient
+
+         # handles case when x is outside of the number of squares on the grid we have
+         if abs(x) >= self.squares_x:
+            break
+
+         self.add_xleftright(y_new, int(x))
+
+   def value_in_projectile(self, x_grid, y_grid):
+      return 1 == grid[y_grid, x_grid]
+
+   def change_square(self, pos=(400, 300)):
       pos_x, pos_y = pos
 
-      square_x, square_y = pos_x/self.x, pos_y/self.y 
+      grid_y, grid_x = res_to_grid_squares(pos_x, pos_y)
 
-      grid_x = int(square_x * self.squares_x) - 1
-      grid_y = int(square_y * self.squares_y) - 1
+      self.grid[grid_y, grid_x] = self.projectile_index
+   
+   def res_to_grid_squares(self, x, y):
+      rat_x, rat_y = x/self.x, y/self.y 
 
-      self.grid[grid_y, grid_x] = 1
-      
+      grid_x = int(rat_x * self.squares_x) - 1
+      grid_y = int(rat_y * self.squares_y) - 1
 
+      return grid_x, grid_y
+
+   def O1_2_xy(self, x, y):
+      """
+      This takes a normalised x, y that ranges from 0-1
+      to 2 new values that range from the resolution of the
+      image, e.g. from 0-1920 and 0-1080
+      """
+
+      new_x = round(x*self.x)
+      new_y = round(y*self.y)
+
+      return new_x, new_y
+
+
+
+"""
+This class holds any instances of type Object and splits them
+up occordingly depending on if the object is a mundo or axe
+"""
 class Scene():
-   """
-   This class holds any instances of type Object and splits them
-   up occordingly depending on if the object is a mundo or axe
-   """
+   
    def __init__(self, mundos=[], axes=[]):
       self.mundos = mundos
       self.axes = axes
@@ -117,7 +180,7 @@ class GameAnalysis():
       self.visuals = Visualisation(self.x, self.y)
       self.frame_history = frame_history
       
-      self.prev_axe_data = deque([])
+      self.prev_axe_data = deque()
 
 
       while True:
@@ -130,7 +193,7 @@ class GameAnalysis():
          ## to calcs
 
    
-         self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
+        # self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
 
          objects_in_scene.clear()
 
@@ -165,12 +228,17 @@ class GameAnalysis():
    def add_to_axe_frames(self, frame_data):
 
       if len(self.prev_axe_data) == self.frame_history:
-         self.prev_axe_data.rotate(-1)
-         self.prev_axe_data.pop()
-         self.prev_axe_data.append(frame_data)   
+         #self.prev_axe_data.pop()
+         self.prev_axe_data.appendleft(frame_data.axes)  
 
+         for i in self.prev_axe_data:
+            print("Final:", [j.position_xywh for j in i])
+
+ 
       else:
-         self.prev_axe_data.append(frame_data)
+         self.prev_axe_data.appendleft(frame_data.axes)
+         for i in self.prev_axe_data:
+            print("Normal:",[j.position_xywh for j in i])
 
 
    def get_axe_prediction(self):
@@ -186,17 +254,33 @@ class GameAnalysis():
 
          full_data.append(centre_pos)
 
-      print(full_data)
-
       current_frame = full_data[2]
-      after_curr_frame = full_data[1]
+      after_frame = full_data[1]
       last_frame = full_data[0]
 
-      grid = Grid(self,x, self.y)
+      print("Current frame:", current_frame)
+      print("After frame:", after_frame)
+      print("Last frame:", last_frame)
 
-      for point in current_frame:
-         pass
+      grid = Grid(self.x, self.y)
 
+      for pos1 in last_frame:
+         for pos2 in after_frame:
+            # get gradient of 2 points as a line
+            grad = self.gradient((pos1, pos2))
+            
+            # add line to grid
+            grid.add_line(pos1, grad)
+
+            # increase index
+            grid.increment_projectile_index()
+      
+      pred = []
+
+      for i in current_frame:
+         if grid.value_in_projectile(i):
+            pred.append(i)
+            
 
       return pred
 
