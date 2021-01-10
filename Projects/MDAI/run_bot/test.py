@@ -5,23 +5,67 @@ squares_y = 32
 
 x, y = 1920, 1080
 
-pos = (400, 300)
+# pos = (400, 300)
 
-pos_x, pos_y = pos
+# pos_x, pos_y = pos
 
-grid_x, grid_y = pos_x/x, pos_y/y 
+# grid_x, grid_y = pos_x/x, pos_y/y 
 
-grid_x = int(grid_x * squares_x) - 1
-grid_y = int(grid_y * squares_y) - 1
+# grid_x = int(grid_x * squares_x) - 1
+# grid_y = int(grid_y * squares_y) - 1
 
-print(grid_x, grid_y)
+
+# grid = np.zeros((squares_x, squares_y), dtype=int)
+
+# grid[grid_y, grid_x] = 1
+
+
+# print(grid)
+
+value = 3
 
 grid = np.zeros((squares_x, squares_y), dtype=int)
 
-grid[grid_y, grid_x] = 1
 
+######
+def cover_grid(y, x, tol):
+   grid[y, x] = value
+
+   if x > 0:
+      for i in range(tol):
+         grid[y, x + i + 1] = value
+         grid[y, x - i - 1] = value
+
+pos = (1, 1)
+grad = 1
+
+# y = mx + c
+
+x, y = pos
+
+#grid[y, x] = 1
+
+c = y - (grad * x)
+print("\n")
+
+# x = (y - c) / m
+
+tol = 1
+
+for y_new in range(y+1, len(grid)):
+   x = (y_new - c) / grad
+
+   if abs(x) >= 32:
+      break
+
+   cover_grid(y_new, int(x), tol)
 
 print(grid)
+
+
+
+
+
 
 
 # current_frame = [(5, 10), (2, 3)]
