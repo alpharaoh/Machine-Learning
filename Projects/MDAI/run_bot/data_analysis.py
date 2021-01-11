@@ -148,6 +148,20 @@ class Grid():
       return new_x, new_y
 
 
+class previousFrameData():
+   def __init__(self):
+      self.frames = []
+
+   def append(self, scene):
+      self.frames.append(scene.axes)
+
+   def show_all(self):
+      for i, scenes in enumerate(self.frames):
+         for j, axe in enumerate(scenes):
+            print(f"Scene {i+1}: Axe {j+1} - {axe.centre_cords}")
+   
+   def __len__(self):
+      return len(self.frames)
 
 """
 This class holds any instances of type Object and splits them
@@ -160,7 +174,7 @@ class Scene():
       self.axes = axes
 
    def __len__(self):
-      return len(self.mundos + self.axes)
+      return len(self.mundos) + len(self.axes)
 
    def clear(self):
       self.mundos.clear()
@@ -180,7 +194,7 @@ class GameAnalysis():
       self.visuals = Visualisation(self.x, self.y)
       self.frame_history = frame_history
       
-      self.prev_axe_data = deque()
+      self.prev_dat = previousFrameData()
 
 
       while True:
@@ -205,6 +219,7 @@ class GameAnalysis():
       objects_list = objects_bboxes[0]
 
       scene = Scene()
+      scene.clear()
 
       axes = False
 
@@ -218,38 +233,27 @@ class GameAnalysis():
             scene.axes.append(obj)
    
       if axes:
-         self.add_to_axe_frames(scene)
+         self.prev_dat.append(scene)
+         self.prev_dat.show_all()
+         print("/\\")
 
       return scene
 
    def get_current_frame(self):
       return self.capture_data.frame
 
-   def add_to_axe_frames(self, frame_data):
-
-      if len(self.prev_axe_data) == self.frame_history:
-         #self.prev_axe_data.pop()
-         self.prev_axe_data.appendleft(frame_data.axes)  
-
-         for i in self.prev_axe_data:
-            print("Final:", [j.position_xywh for j in i])
-
- 
-      else:
-         self.prev_axe_data.appendleft(frame_data.axes)
-         for i in self.prev_axe_data:
-            print("Normal:",[j.position_xywh for j in i])
-
 
    def get_axe_prediction(self):
-      if len(self.prev_axe_data) < self.frame_history:
+      if len(self.prev_dat) < self.frame_history:
          return
+
+      self.prev_dat.show_all()
 
       full_data = []
 
       for i, scene in enumerate(self.prev_axe_data):
          centre_pos = []
-         for axe_data in scene.axes:
+         for axe_data in scene:
             centre_pos.append(axe_data.centre_cords)
 
          full_data.append(centre_pos)
