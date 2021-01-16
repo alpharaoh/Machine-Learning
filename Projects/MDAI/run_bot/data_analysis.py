@@ -64,11 +64,10 @@ class GameAnalysis():
          # get inferance from frame
          objects_in_scene = self.get_state(current_frame_data)            
 
-         print(f"Total objects detected: {len(objects_in_scene)}")
+         print(".")
 
          # get prediction of axe projection using previous frames
          predictions = self.get_axe_prediction()
-
 
    
         # self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
@@ -88,13 +87,12 @@ class GameAnalysis():
       objects_list = objects_bboxes[0].numpy()
 
       scene = Scene()
-
+      scene_objects = []
       axes = False
 
       for object_ in objects_list:
 
          obj = GameObject(id=int(object_[-1]), position_xywh=object_[:-1])
-         print("OBJ",obj, obj.id)
 
          # mundo id = 0, axe id = 1
          if obj.id == 0: 
@@ -102,10 +100,11 @@ class GameAnalysis():
          else:
             axes = True
             scene.axes.append(obj)
+            scene_objects.append(obj)
    
       # if axes are present in the scene, store the scene
       if axes:
-         self.prev_dat.append(scene)
+         self.prev_dat.append(scene_objects)
 
       return scene
 
@@ -140,18 +139,23 @@ class GameAnalysis():
 
          full_data.append(centre_pos)
 
+      print("FULL", full_data)
+
+      full_dat_len = len(full_data)
 
       # get frames
-      current_frame = full_data[2]
-      after_frame = full_data[1]
-      last_frame = full_data[0]
+      current_frame = full_data[full_dat_len-1]
+      after_frame = full_data[full_dat_len-2]
+      last_frame = full_data[full_dat_len-3]
 
       print("Current frame:", current_frame)
       print("After frame:", after_frame)
       print("Last frame:", last_frame)
 
+      print(self.x, self.y)
+
       # create matrix with respect to screen resolution
-      grid = Grid(self.x, self.y)
+      grid = Grid(x=self.x, y=self.y)
 
       for pos1 in last_frame:
          for pos2 in after_frame:
@@ -163,6 +167,10 @@ class GameAnalysis():
 
             # increase index
             grid.increment_projectile_index()
+
+            print(grid,"\n")
+      
+      # full_data.clear()
       
       # pred = []
 

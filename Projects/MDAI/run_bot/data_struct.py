@@ -73,8 +73,12 @@ class Grid():
         # the axes, 2 is the mundos, 3 is the safe areas etc.
         self.projectile_index = 1
 
+        self.grid = None
+
         self.create_grid()
 
+    def __repr__(self):
+        return str(self.grid)
 
     def increment_projectile_index(self):
         self.projectile_index += 1
@@ -87,7 +91,7 @@ class Grid():
         assert (self.ratio_x / self.x)  == (self.ratio_y / self.y), f"ratio must be respective of resolution; \
             {self.ratio_x}:{self.ratio_y} does not corrispond to the resolution {self.x}x{self.y}"
 
-        self.grid = np.zeros((self.squares_x, self.squares_y), dtype=int)
+        self.grid = np.zeros((self.squares_y, self.squares_x), dtype=int)
 
     def change_value(self, pos, value):
         x, y = pos
@@ -100,12 +104,21 @@ class Grid():
         self.change_value((x, y), self.projectile_index)
 
         # make sure that there is no out of bound error
-        if x > 0:
-            for i in range(self.line_tol):
+        for i in range(self.line_tol):
+
+            addition_max = x + i + 1
+            subtraction_min = x - i - 1
+
+            x_bounds = addition_max >= 0 and addition_max < self.squares_x
+            y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y 
+
+            if x_bounds and y_bounds:
+
                 # add quadrant(s) to right of point
-                self.grid[y, x + i + 1] = self.projectile_index
+                self.grid[y, addition_max] = self.projectile_index
                 # add quadrant(s) to left of point
-                self.grid[y, x - i - 1] = self.projectile_index
+                self.grid[y, subtraction_min] = self.projectile_index
+
 
     def add_line(self, start_pos, gradient):
         """
@@ -115,17 +128,21 @@ class Grid():
         to fill out a gradient on the grid using a start position
         """
         x, y = start_pos
+        gradient = np.float64(gradient)
+
+       # print(f"Gradient: {gradient}\nx: {x}\ny: {y}")
+
 
         # get y-intercept (c) using a rearranged version of y = mx + c
         c = y - (gradient * x)
 
-        for y_new in range(y+1, len(self.grid)):
+        for y_new in range(int(y+1), len(self.grid)):
             # get x using a rearranged version of y = mx + c
             x = (y_new - c) / gradient
 
             # handles case when x is outside of the number of squares on the grid we have
             if abs(x) >= self.squares_x:
-            break
+                break
 
             self.add_xleftright(y_new, int(x))
 

@@ -1,10 +1,7 @@
-
-
-
 import numpy as np
 
-squares_x = 18
-squares_y = 32
+squares_x = 32
+squares_y = 18
 
 x, y = 1920, 1080
 
@@ -27,19 +24,26 @@ x, y = 1920, 1080
 
 value = 1
 
-grid = np.zeros((squares_x, squares_y), dtype=int)
+grid = np.zeros((squares_y, squares_x), dtype=int)
 
 
 ######
 def cover_grid(y, x, tol):
    grid[y, x] = value
+   print(x, y)
 
-   if x > 0:
-      for i in range(tol):
-         grid[y, x + i + 1] = value
-         grid[y, x - i - 1] = value
+   for i in range(tol):
+      addition_max = x + i + 1
+      subtraction_min = x - i - 1
 
-pos = (1, 1)
+      x_bounds = addition_max >= 0 and addition_max < squares_x
+      y_bounds = subtraction_min >= 0 and subtraction_min < squares_x 
+
+      if x_bounds and y_bounds:
+         grid[y, addition_max] = value
+         grid[y, subtraction_min] = value
+
+pos = (17, 1)
 grad = 1
 
 # y = mx + c
