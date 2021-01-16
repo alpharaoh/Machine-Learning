@@ -1,3 +1,6 @@
+
+
+
 import numpy as np
 
 squares_x = 18
@@ -22,7 +25,7 @@ x, y = 1920, 1080
 
 # print(grid)
 
-value = 3
+value = 1
 
 grid = np.zeros((squares_x, squares_y), dtype=int)
 
