@@ -29,3 +29,16 @@ class ScreenCapture():
       frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
 
       return frame
+
+
+# Test:
+# sc = ScreenCapture(1920, 1080)
+
+# with mss() as sct:
+#    while True:
+#       image = sc.get_frame(sct)
+#       cv2.imshow("visualisation", image)
+
+#       if cv2.waitKey(25) & 0xFF == ord('q'):
+#          cv2.destroyAllWindows()
+#          exit()

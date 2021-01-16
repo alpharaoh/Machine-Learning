@@ -26,7 +26,7 @@ from collections import deque
 from yolo_inference import YoloInference
 from visualisation import Visualisation
 
-os.system("clear")
+# os.system("clear")
 print("Loaded modules.\n\nStarting...")
 
 
@@ -93,13 +93,13 @@ class Grid():
       x, y = pos
       self.grid[y, x] = value
 
-   def add_xleftright(self, y, x, tol):
-      change_value((x, y), self.projectile_index)
+   def add_xleftright(self, y, x):
+      self.change_value((x, y), self.projectile_index)
 
       if x > 0:
          for i in range(self.line_tol):
-            grid[y, x + i + 1] = self.projectile_index
-            grid[y, x - i - 1] = self.projectile_index
+            self.grid[y, x + i + 1] = self.projectile_index
+            self.grid[y, x - i - 1] = self.projectile_index
 
    def add_line(self, start_pos, gradient):
       x, y = start_pos
@@ -107,7 +107,7 @@ class Grid():
       # get y-intercept (c) using a rearranged version of y = mx + c
       c = y - (gradient * x)
 
-      for y_new in range(y+1, len(grid)):
+      for y_new in range(y+1, len(self.grid)):
          # get x using a rearranged version of y = mx + c
          x = (y_new - c) / gradient
 
@@ -118,12 +118,12 @@ class Grid():
          self.add_xleftright(y_new, int(x))
 
    def value_in_projectile(self, x_grid, y_grid):
-      return 1 == grid[y_grid, x_grid]
+      return 1 == self.grid[y_grid, x_grid]
 
    def change_square(self, pos=(400, 300)):
       pos_x, pos_y = pos
 
-      grid_y, grid_x = res_to_grid_squares(pos_x, pos_y)
+      grid_y, grid_x = self.res_to_grid_squares(pos_x, pos_y)
 
       self.grid[grid_y, grid_x] = self.projectile_index
    
@@ -224,9 +224,9 @@ class GameAnalysis():
       axes = False
 
       for object_ in objects_list:
-         obj = GameObject(id=int(object_[-1]), position_xywh=object_[:-1])
+         obj = {"id" : int(object_[-1]), "position_xywh" : object_[:-1]}
 
-         if obj.id == 0: # mundo
+         if obj.get("id") == 0: # mundo
             scene.mundos.append(obj)
          else:
             axes = True
@@ -251,7 +251,7 @@ class GameAnalysis():
 
       full_data = []
 
-      for i, scene in enumerate(self.prev_axe_data):
+      for scene in self.prev_dat.frames:
          centre_pos = []
          for axe_data in scene:
             centre_pos.append(axe_data.centre_cords)
@@ -281,16 +281,15 @@ class GameAnalysis():
       
       pred = []
 
-      for i in current_frame:
-         if grid.value_in_projectile(i):
-            pred.append(i)
+      # for i in current_frame:
+      #    if grid.value_in_projectile(i):
+      #       pred.append(i)
             
-
       return pred
 
    def parallel(self, line1, line2):
-      if near(gradient(line1), gradient(line2)):
-         return gradient(line1), line2
+      if near(gradient:=self.gradient(line1), self.gradient(line:=line2)):
+         return gradient, line
 
    def gradient(self, line):
       (x1, y1), (x2, y2) = line
@@ -300,7 +299,7 @@ class GameAnalysis():
          gradient = (1. / (x1 - x2)) * (y1 - y2)
          return gradient   
 
-def near(self, val1, val2, rtol=1e-2, atol=1e-3):
+def near(val1, val2, rtol=1e-2, atol=1e-3):
       return np.isclose(val1, val2, rtol=rtol, atol=atol)
 
 game = GameAnalysis(weights="/Users/alpharaoh/Downloads/best (1).pt")
