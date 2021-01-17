@@ -68,9 +68,10 @@ class GameAnalysis():
 
          # get prediction of axe projection using previous frames
          predictions = self.get_axe_prediction()
-
    
-        # self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
+         self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
+
+         objects_in_scene.clear()
 
 
    def get_state(self, scene_data):
@@ -87,8 +88,7 @@ class GameAnalysis():
       objects_list = objects_bboxes[0].numpy()
 
       scene = Scene()
-      scene_objects = []
-      axes = False
+      axes_obj = []
 
       for object_ in objects_list:
 
@@ -98,13 +98,12 @@ class GameAnalysis():
          if obj.id == 0: 
             scene.mundos.append(obj)
          else:
-            axes = True
             scene.axes.append(obj)
-            scene_objects.append(obj)
+            axes_obj.append(obj)
    
       # if axes are present in the scene, store the scene
-      if axes:
-         self.prev_dat.append(scene_objects)
+      if axes_obj:
+         self.prev_dat.append(axes_obj)
 
       return scene
 
@@ -139,7 +138,7 @@ class GameAnalysis():
 
          full_data.append(centre_pos)
 
-      print("FULL", full_data)
+      self.prev_dat.frames.clear()
 
       full_dat_len = len(full_data)
 
@@ -148,12 +147,6 @@ class GameAnalysis():
       after_frame = full_data[full_dat_len-2]
       last_frame = full_data[full_dat_len-3]
 
-      print("Current frame:", current_frame)
-      print("After frame:", after_frame)
-      print("Last frame:", last_frame)
-
-      print(self.x, self.y)
-
       # create matrix with respect to screen resolution
       grid = Grid(x=self.x, y=self.y)
 
@@ -161,24 +154,28 @@ class GameAnalysis():
          for pos2 in after_frame:
             # get gradient of 2 points as a line
             grad = self.gradient((pos1, pos2))
+
+            # if gradient is not vertical
+            if grad:
+               # add line to grid
+               grid.add_line(start_pos=pos1, gradient=grad)
+
+               # increase index
+               grid.increment_projectile_index()
+
+      pred = []
+
+      # Todo: sort out prediction format and remember the start_pos
+      for pos3 in current_frame:
+         if grid.is_valid(pos3):
+            prediction = (pos3)
+            pred.append(prediction)
+
+      print(grid,"\n")
+
+      print("PREDICTION:", pred)
             
-            # add line to grid
-            grid.add_line(pos1, grad)
-
-            # increase index
-            grid.increment_projectile_index()
-
-            print(grid,"\n")
-      
-      # full_data.clear()
-      
-      # pred = []
-
-      # for i in current_frame:
-      #    if grid.value_in_projectile(i):
-      #       pred.append(i)
-            
-      # return pred
+      return pred
 
    def parallel(self, line1, line2):
       if near(gradient:=self.gradient(line1), self.gradient(line:=line2)):
