@@ -102,25 +102,25 @@ class Grid():
         This adds extra quadrants surrounding the gradient line depending on the tolerance
         """
         self.change_value((x, y), self.projectile_index)
-
-        # make sure that there is no out of bound error
+        
         for i in range(self.line_tol):
 
             addition_max = x + i + 1
             subtraction_min = x - i - 1
 
-            x_bounds = addition_max >= 0 and addition_max < self.squares_x
-            y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y 
+            in_x_bounds = addition_max >= 0 and addition_max < self.squares_x
+            in_y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y 
 
-            if x_bounds and y_bounds:
-
+            # make sure that there is no out of bound error
+            if in_x_bounds:
                 # add quadrant(s) to right of point
                 self.grid[y, addition_max] = self.projectile_index
+            if in_y_bounds:
                 # add quadrant(s) to left of point
                 self.grid[y, subtraction_min] = self.projectile_index
 
 
-    def add_line(self, start_pos, gradient):
+    def add_line(self, start_pos=(0, 0), gradient=None):
         """
         This will use the equation of a line;
         y = mx + c
@@ -128,10 +128,6 @@ class Grid():
         to fill out a gradient on the grid using a start position
         """
         x, y = start_pos
-        gradient = np.float64(gradient)
-
-       # print(f"Gradient: {gradient}\nx: {x}\ny: {y}")
-
 
         # get y-intercept (c) using a rearranged version of y = mx + c
         c = y - (gradient * x)
@@ -150,7 +146,7 @@ class Grid():
         """
         compares the position of an axe and returns True if it is located on a 1.
         """
-        return 1 == self.grid[y_grid, x_grid]
+        return self.grid[y_grid, x_grid] != 0
 
     def change_square(self, pos=(400, 300)):
         pos_x, pos_y = pos
@@ -175,17 +171,29 @@ class Grid():
 
         return grid_x, grid_y
 
-    def O1_2_xy(self, x, y):
+    def norm_2_xy(self, x, y):
         """
         This takes a normalised x, y that ranges from 0-1
         to 2 new values that range from the resolution of the
         image, e.g. from 0-1920 and 0-1080
         """
-
         new_x = round(x*self.x)
         new_y = round(y*self.y)
 
         return new_x, new_y
+
+    def is_valid(self, position):
+        x, y = position
+
+        new_x, new_y = self.norm_2_xy(x, y)
+
+        grid_x, grid_y = self.res_to_grid_squares(new_x, new_y)
+
+        is_valid = self.value_in_projectile(grid_x, grid_y)
+
+        self.change_value((grid_x, grid_y), 9)
+
+        return is_valid
 
 """
 This class stores the previous data such as previous scenes
