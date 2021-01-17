@@ -1,5 +1,11 @@
+"""
+This program will create a visual representation of the data given by
+YOLO and data_analysis
+"""
+
 import cv2
 import numpy as np
+from PIL import Image, ImageDraw
 
 AXE_COLOR = (0, 255, 0)
 MUNDO_COLOR = (0, 0, 255)
@@ -11,14 +17,32 @@ class Visualisation():
       self.y = y
 
    def show_visuals(self, objects_in_scene, image, axe_pred):
+      """
+      This is the main method call to open the live capture with
+      added visuals to represent the data
+      """
+      image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+
+      # draw grid (slow)
+      image = self.draw_grid(image)
+
+      image = self.draw_pred(image)
+
+      # add axe bounding box
       image = self.return_bbox_image(image, objects_in_scene.axes, "Axe", AXE_COLOR)
+
+      # add mundo bounding box
       image = self.return_bbox_image(image, objects_in_scene.mundos, "Mundo", MUNDO_COLOR)
 
+      # add a circle/dot at the centre of the axe bbox
       image = self.show_centre_of_bbox(image, objects_in_scene.axes)
 
-      if axe_pred != None:
-         image = self.draw_pred_arrows(image, axe_pred, 100)
+      # if there is a prediction made in the current frame, draw an arrow graphic to highlight
+      # where the program predicts the axe will go
+      # if axe_pred != None:
+      #    image = self.draw_pred_arrows(image, axe_pred, 100)
 
+      # open live capture window with new shapes
       try:
          cv2.imshow("visualisation", image)
 
@@ -30,7 +54,11 @@ class Visualisation():
          pass
 
    def show_centre_of_bbox(self, image, objects):
-      
+      """
+      This function will return an image with a small circle at the centre of the object
+      bounding box. This is helpful since the predictions are being based off the centre
+      of the axe bounding box and it helps to visualise this
+      """
       for obj in objects:
          image = cv2.circle(image, 
                            (int(obj.centre_cords[0] * self.x), int(obj.centre_cords[1] * self.y)), 
@@ -42,6 +70,10 @@ class Visualisation():
 
 
    def return_bbox_image(self, image, bboxes, label, color):
+      """
+      This function loops through the bounding boxes detected in the current frame
+      and returns an image of drawn bounding boxes
+      """
       if bboxes:
          for obj in bboxes:
             image = self.draw_single_bbox(image, obj.position_xywh, label=label, color=color)
@@ -50,7 +82,10 @@ class Visualisation():
 
 
    def draw_single_bbox(self, image, x, color=None, label=None, line_thickness=2):
-      """Plots one bounding box on image"""
+      """
+      This function will return an image after it has plotted a bounding box to it. This
+      function is very similiar to the one found in YOLOv5's utilities
+      """
 
       # get pixel locations of top left and bottom right corners
       corner1 = (int(x[0] * self.x), int(x[1] * self.y))
@@ -73,11 +108,12 @@ class Visualisation():
                      thickness=font_thickness, 
                      lineType=cv2.LINE_AA)
 
-      image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-
       return image
 
    def draw_pred_arrows(self, image, predictions, dist_mult):
+      """
+      TODO
+      """
       print(predictions)
 
       for pred in predictions:
@@ -93,3 +129,25 @@ class Visualisation():
                                  5)
 
       return image
+   
+   def draw_grid(self, image, grid_size = (32, 18)):
+      grid_x, grid_y = grid_size
+      height, width, _ = image.shape
+
+      step_size = int(width/grid_x)
+
+      image = Image.fromarray(image)
+      draw = ImageDraw.Draw(image)
+      
+
+      for x in range(0, width, step_size):
+         line = ((x, 0), (x, height))
+         draw.line(line, fill="black")
+
+      for y in range(0, height, step_size):
+         line = ((0, y), (width, y))
+         draw.line(line, fill="black")
+
+      del draw
+
+      return np.asarray(image)
