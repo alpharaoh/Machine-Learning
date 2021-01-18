@@ -8,6 +8,7 @@ import torch
 from PIL import Image
 import torch
 import cv2
+import time
 from mss import mss
 
 from screen_capture import ScreenCapture
@@ -20,22 +21,39 @@ pytorch Detectors object class:
 """
 
 class YoloInference():
-   def __init__(self, weights, conf=0.6):
+   def __init__(self, weights, conf=0.6, cuda=False):
       self.screen_capture = ScreenCapture(1920, 1080, monitor_number=1)
+      self.cuda = cuda
 
-      # load our model (doesn't need yolo repo)
-      self.model = torch.hub.load("ultralytics/yolov5", 
-                                    "custom", 
-                                    path_or_model=weights)
+      if self.cuda:
+         # load our model (doesn't need yolo repo)
+         self.model = torch.hub.load("ultralytics/yolov5", 
+                                       "custom", 
+                                       path_or_model=weights).cuda()
+      
+      else:
+         self.model = torch.hub.load("ultralytics/yolov5", 
+                                       "custom", 
+                                       path_or_model=weights)
+
 
 
    def infer_real_time_frames(self):
       with mss() as sct:
          while True:
+            start = time.time()
             # get frame from screen grab
             self.frame = self.screen_capture.get_frame(sct)
+            end = time.time()
 
             # use YOLO model to infer frame
-            detection = self.model(self.frame, size=416)
+            if self.cuda:
+               detection = self.model(self.frame, size=416).cuda()
+            else:
+               detection = self.model(self.frame, size=416)
+
+            end_2 = time.time()
+            print(f"Inference took away {1/(end-start) - 1/(end_2-start)}fps")
+
 
             yield detection

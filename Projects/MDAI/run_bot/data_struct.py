@@ -202,8 +202,8 @@ class previousFrameData():
     def __init__(self):
         self.frames = []
 
-    def append(self, scene):
-        self.frames.append(scene)
+    def append(self, axes):
+        self.frames.append(axes)
 
     def show_all(self):
             for j, axe in enumerate(self.frames[0].axes):

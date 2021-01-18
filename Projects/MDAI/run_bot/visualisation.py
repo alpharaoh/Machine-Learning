@@ -24,26 +24,28 @@ class Visualisation():
       image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
 
       # draw grid (slow)
-      image = self.draw_grid(image)
-
-      image = self.draw_pred(image)
+      #image = self.draw_grid(image)
 
       # add axe bounding box
-      image = self.return_bbox_image(image, objects_in_scene.axes, "Axe", AXE_COLOR)
+      #image = self.return_bbox_image(image, objects_in_scene.axes, "Axe", AXE_COLOR)
 
       # add mundo bounding box
-      image = self.return_bbox_image(image, objects_in_scene.mundos, "Mundo", MUNDO_COLOR)
+      #image = self.return_bbox_image(image, objects_in_scene.mundos, "Mundo", MUNDO_COLOR)
 
       # add a circle/dot at the centre of the axe bbox
       image = self.show_centre_of_bbox(image, objects_in_scene.axes)
 
       # if there is a prediction made in the current frame, draw an arrow graphic to highlight
       # where the program predicts the axe will go
-      # if axe_pred != None:
-      #    image = self.draw_pred_arrows(image, axe_pred, 100)
+      if axe_pred:
+         image = self.draw_pred_arrows(image, axe_pred, 1)
+
+
+
 
       # open live capture window with new shapes
       try:
+         image = cv2.resize(image, (960, 540))  
          cv2.imshow("visualisation", image)
 
          if cv2.waitKey(25) & 0xFF == ord('q'):
@@ -114,19 +116,23 @@ class Visualisation():
       """
       TODO
       """
-      print(predictions)
+      print("LEN",len(predictions))
 
       for pred in predictions:
 
-         start_pos, vector = pred
+         start_pos, end_pos, grad = pred
 
-         end_pos = (start_pos[0] + (dist_mult *  vector), start_pos[0] + (dist_mult *  vector))
+         start_norm_x, start_norm_y = start_pos
+         end_norm_x, end_norm_y = end_pos
 
+         new_start_pos = (int(start_norm_x * self.x), int(start_norm_y * self.y))
+         new_end_pos = (int(end_norm_x * self.x), int(end_norm_y * self.y))
+         
          image = cv2.arrowedLine(image, 
-                                 start_pos, 
-                                 end_pos,
+                                 new_start_pos, 
+                                 new_end_pos,
                                  AXE_COLOR, 
-                                 5)
+                                 2)
 
       return image
    

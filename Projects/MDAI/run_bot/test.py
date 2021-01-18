@@ -1,5 +1,41 @@
 import numpy as np
+import cv2
+from PIL import Image, ImageDraw
 
+
+def draw_grid(image, grid_size = (64, 36)):
+      grid_x, grid_y = grid_size
+      height, width, _ = image.shape
+
+      step_size = int(width/grid_x)
+
+      image = Image.fromarray(image)
+      draw = ImageDraw.Draw(image)
+      
+
+      for x in range(0, width, step_size):
+         line = ((x, 0), (x, height))
+         draw.line(line, fill="black")
+
+      for y in range(0, height, step_size):
+         line = ((0, y), (width, y))
+         draw.line(line, fill="black")
+
+      del draw
+
+      return image 
+
+image = cv2.imread("./screenshot.png")
+
+image = draw_grid(image)
+
+image = np.array(image)
+cv2.imshow("", image)
+
+cv2.waitKey(0)
+
+
+exit()
 squares_x = 32
 squares_y = 18
 

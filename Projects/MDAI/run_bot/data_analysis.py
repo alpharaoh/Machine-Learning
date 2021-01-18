@@ -21,7 +21,7 @@ import time
 import random
 import numpy as np
 import os
-from collections import deque
+import time
 
 from yolo_inference import YoloInference
 from visualisation import Visualisation
@@ -39,9 +39,9 @@ calculate the game state and what action to take based on the state
 """
 class GameAnalysis():
    
-   def __init__(self, weights=".", frame_history=3):
+   def __init__(self, weights=".", frame_history=3, cuda=False):
       assert type(weights) == str, "Weights are path of .pt weights file as Type String"
-      self.capture_data = YoloInference(weights)
+      self.capture_data = YoloInference(weights, cuda=cuda)
 
       # get screen capture frames as generator
       self.gen = self.capture_data.infer_real_time_frames()
@@ -63,8 +63,6 @@ class GameAnalysis():
 
          # get inferance from frame
          objects_in_scene = self.get_state(current_frame_data)            
-
-         print(".")
 
          # get prediction of axe projection using previous frames
          predictions = self.get_axe_prediction()
@@ -148,7 +146,9 @@ class GameAnalysis():
       last_frame = full_data[full_dat_len-3]
 
       # create matrix with respect to screen resolution
-      grid = Grid(x=self.x, y=self.y)
+      grid = Grid(x=self.x, y=self.y, ratio_mult=3)
+
+      pred = []
 
       for pos1 in last_frame:
          for pos2 in after_frame:
@@ -163,17 +163,25 @@ class GameAnalysis():
                # increase index
                grid.increment_projectile_index()
 
-      pred = []
+               prediction = (pos1, pos2, grad)
+               pred.append(prediction)
+            
+            # Todo: sort out prediction format and remember the start_pos
+            # for pos3 in current_frame:
+            #    if grid.is_valid(pos3):
+            #       prediction = (pos1, pos3, grad)
+            #       pred.append(prediction)
 
-      # Todo: sort out prediction format and remember the start_pos
-      for pos3 in current_frame:
-         if grid.is_valid(pos3):
-            prediction = (pos3)
+      for pos1 in last_frame:
+         for pos3 in current_frame:
+            grad = self.gradient((pos1, pos3))
+
+            prediction = (pos1, pos3, grad)
             pred.append(prediction)
 
-      print(grid,"\n")
-
-      print("PREDICTION:", pred)
+      if pred:
+         print(grid,"\n")
+         print("PREDICTION:", pred)
             
       return pred
 
