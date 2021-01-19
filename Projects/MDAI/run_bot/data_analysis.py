@@ -62,7 +62,7 @@ class GameAnalysis():
          current_frame_data = next(self.gen)
 
          # get inferance from frame
-         objects_in_scene = self.get_state(current_frame_data)            
+         objects_in_scene = self.get_state(current_frame_data)
 
          # get prediction of axe projection using previous frames
          predictions = self.get_axe_prediction()
@@ -88,6 +88,8 @@ class GameAnalysis():
       scene = Scene()
       axes_obj = []
 
+      mundo_grid = Grid()
+
       for object_ in objects_list:
 
          obj = GameObject(id=int(object_[-1]), position_xywh=object_[:-1])
@@ -95,6 +97,8 @@ class GameAnalysis():
          # mundo id = 0, axe id = 1
          if obj.id == 0: 
             scene.mundos.append(obj)
+            mundo_grid.add_mundo(obj.position_xywh)
+            # print(obj.position_xywh)
          else:
             scene.axes.append(obj)
             axes_obj.append(obj)
@@ -102,6 +106,9 @@ class GameAnalysis():
       # if axes are present in the scene, store the scene
       if axes_obj:
          self.prev_dat.append(axes_obj)
+
+      print(mundo_grid)
+
 
       return scene
 
@@ -150,27 +157,37 @@ class GameAnalysis():
 
       pred = []
 
+
+      """
+      Grid solution has been tried and tested and seems very similiar
+      to standard solution. For now I will use standard solution and at end
+      we will test both ways
+      """
       for pos1 in last_frame:
          for pos2 in after_frame:
             # get gradient of 2 points as a line
             grad = self.gradient((pos1, pos2))
 
-            # if gradient is not vertical
-            if grad:
-               # add line to grid
-               grid.add_line(start_pos=pos1, gradient=grad)
+            # # if gradient is not vertical
+            # if grad:
+            #    # add line to grid
+            #    grid.add_line(start_pos=pos1, gradient=grad)
 
-               # increase index
-               grid.increment_projectile_index()
+            #    # increase index
+            #    grid.increment_projectile_index()
 
-               prediction = (pos1, pos2, grad)
-               pred.append(prediction)
-            
-            # Todo: sort out prediction format and remember the start_pos
-            # for pos3 in current_frame:
-            #    if grid.is_valid(pos3):
-            #       prediction = (pos1, pos3, grad)
-            #       pred.append(prediction)
+            #    prediction = (pos1, pos2, grad)
+            #    pred.append(prediction)
+
+            prediction = (pos1, pos2, grad)
+            pred.append(prediction)
+
+      for pos2 in after_frame:
+         for pos3 in current_frame:
+            grad = self.gradient((pos2, pos3))
+
+            prediction = (pos1, pos3, grad)
+            pred.append(prediction)
 
       for pos1 in last_frame:
          for pos3 in current_frame:
@@ -179,9 +196,9 @@ class GameAnalysis():
             prediction = (pos1, pos3, grad)
             pred.append(prediction)
 
-      if pred:
-         print(grid,"\n")
-         print("PREDICTION:", pred)
+      #if pred:
+         # print(grid,"\n")
+         # print("PREDICTION:", pred)
             
       return pred
 

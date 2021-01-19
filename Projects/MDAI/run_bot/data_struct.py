@@ -166,8 +166,8 @@ class Grid():
 
         # times ratio with max grid resolution to get square index
         # of position x, y
-        grid_x = round(rat_x * self.squares_x) - 1
-        grid_y = round(rat_y * self.squares_y) - 1
+        grid_x = round(rat_x * self.squares_x)
+        grid_y = round(rat_y * self.squares_y)
 
         return grid_x, grid_y
 
@@ -194,6 +194,25 @@ class Grid():
         self.change_value((grid_x, grid_y), 9)
 
         return is_valid
+
+    def add_mundo(self, bbox):
+        x, y, w, h, _ = np.array(bbox)
+
+        x = int(x*self.squares_x)
+        y = int(y*self.squares_y)
+        x2 = int(w*self.squares_x)
+        y2 = int(h*self.squares_y)
+        
+        for grid_x in range(x, x2):
+            for grid_y in range(y, y2):
+
+                x_bounds = grid_x < self.squares_x and grid_x >= 0
+                y_bounds = grid_y < self.squares_y and grid_y >= 0
+
+                print(x_bounds, y_bounds)
+
+                if x_bounds and y_bounds:
+                    self.grid[grid_y, grid_x] = 1
 
 """
 This class stores the previous data such as previous scenes
