@@ -94,14 +94,14 @@ class Grid():
         self.grid = np.zeros((self.squares_y, self.squares_x), dtype=int)
 
     def change_value(self, pos, value):
-        x, y = pos
+        y, x = pos
         self.grid[y, x] = value
 
     def add_xleftright(self, y, x):
         """
         This adds extra quadrants surrounding the gradient line depending on the tolerance
         """
-        self.change_value((x, y), self.projectile_index)
+        self.change_value((y, x), self.projectile_index)
         
         for i in range(self.line_tol):
 
@@ -109,18 +109,66 @@ class Grid():
             subtraction_min = x - i - 1
 
             in_x_bounds = addition_max >= 0 and addition_max < self.squares_x
-            in_y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y 
+            in_y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y
+
 
             # make sure that there is no out of bound error
             if in_x_bounds:
+                pos = (y, addition_max)
+
                 # add quadrant(s) to right of point
-                self.grid[y, addition_max] = self.projectile_index
+                self.change_value(pos, self.projectile_index)
+
             if in_y_bounds:
+                pos = (y, subtraction_min)
+
                 # add quadrant(s) to left of point
-                self.grid[y, subtraction_min] = self.projectile_index
+                self.change_value(pos, self.projectile_index)
+
+    def add_xleftright_mundo(self, y, x, second_grid):
+        obj_in_projectile = False
+
+        if second_grid[y, x] == 1:
+            obj_in_projectile = True
+        
+        self.change_value((y, x), self.projectile_index)
+
+        for i in range(self.line_tol):
+
+            addition_max = x + i + 1
+            subtraction_min = x - i - 1
+
+            in_x_bounds = addition_max >= 0 and addition_max < self.squares_x
+            in_y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y
 
 
-    def add_line(self, start_pos=(0, 0), gradient=None):
+            # make sure that there is no out of bound error
+            if in_x_bounds:
+                pos = (y, addition_max)
+
+                if second_grid[y, x] == 1:
+                    obj_in_projectile = True
+
+                # add quadrant(s) to right of point
+                self.change_value(pos, self.projectile_index)
+
+            if in_y_bounds:
+                pos = (y, subtraction_min)
+
+                if second_grid[y, x] == 1:
+                    obj_in_projectile = True
+
+                # add quadrant(s) to left of point
+                self.change_value(pos, self.projectile_index)
+
+        if obj_in_projectile:
+            pass
+        
+
+        
+
+
+    def add_line(self, start_pos=(0, 0), gradient=None, direction=False):
         """
         This will use the equation of a line;
         y = mx + c
@@ -139,8 +187,13 @@ class Grid():
             # handles case when x is outside of the number of squares on the grid we have
             if abs(x) >= self.squares_x:
                 break
-
-            self.add_xleftright(y_new, int(x))
+            
+            if direction:
+                self.direction_index = 1
+                self.add_xleftright_mundo(y_new, int(x))
+                self.direction_index += 1
+            else:
+                self.add_xleftright(y_new, int(x))
 
     def value_in_projectile(self, x_grid, y_grid):
         """
@@ -204,15 +257,26 @@ class Grid():
         y2 = int(h*self.squares_y)
         
         for grid_x in range(x, x2):
-            for grid_y in range(y, y2):
+            for grid_y in range(y-2, y2):
 
                 x_bounds = grid_x < self.squares_x and grid_x >= 0
                 y_bounds = grid_y < self.squares_y and grid_y >= 0
 
-                print(x_bounds, y_bounds)
-
                 if x_bounds and y_bounds:
                     self.grid[grid_y, grid_x] = 1
+    
+    def obj_in_mundo_grid(self, positions):
+        obj_in_mundo_grid = False
+        
+        for position in positions:
+            x, y = position
+            new_x, new_y = self.norm_2_xy(x, y)
+            grid_x, grid_y = self.res_to_grid_squares(new_x, new_y)
+
+            if self.grid[grid_y, grid_x] != 0:
+                obj_in_mundo_grid = True
+
+        return obj_in_mundo_grid
 
 """
 This class stores the previous data such as previous scenes

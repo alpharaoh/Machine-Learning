@@ -26,9 +26,10 @@ import time
 from yolo_inference import YoloInference
 from visualisation import Visualisation
 from data_struct import *
+from mundo_movement import MundoController
 
 # os.system("clear")
-print("Loaded modules.\n\nStarting...")
+#print("Loaded modules.\n\nStarting...")
 
 
 NAMES = ["Mundo", "Axe"]
@@ -56,16 +57,22 @@ class GameAnalysis():
       self.frame_history = frame_history
       
       self.prev_dat = previousFrameData()
+
+      self.mundo = MundoController()
       
       # loop to allow calling generator
       while True:
          current_frame_data = next(self.gen)
 
          # get inferance from frame
-         objects_in_scene = self.get_state(current_frame_data)
+         objects_in_scene, mundo_grid = self.get_state(current_frame_data)
 
          # get prediction of axe projection using previous frames
-         predictions = self.get_axe_prediction()
+         predictions = self.get_axe_prediction(mundo_grid)
+
+         if predictions:
+            print("PRED", predictions)
+            self.move_mundo_based_on_state(predictions, mundo_grid)
    
          self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
 
@@ -98,7 +105,6 @@ class GameAnalysis():
          if obj.id == 0: 
             scene.mundos.append(obj)
             mundo_grid.add_mundo(obj.position_xywh)
-            # print(obj.position_xywh)
          else:
             scene.axes.append(obj)
             axes_obj.append(obj)
@@ -107,17 +113,49 @@ class GameAnalysis():
       if axes_obj:
          self.prev_dat.append(axes_obj)
 
-      print(mundo_grid)
+      return scene, mundo_grid
 
+   def move_mundo_based_on_state(self, predictions, mundo_grid):
+      direction_grid = Grid()
 
-      return scene
+      for pred in predictions:
+
+         start_pos, _, grad = pred
+
+         if not grad:
+            return
+
+         direction_grid.add_line(start_pos=start_pos, gradient=grad, direction=True)
+
+      
+      # bot_bounds_x, bot_bounds_y = 32, 18
+
+      # position_found = False
+
+      # while not position_found:
+      
+      #    x_b = random.randint(bot_bounds_x)
+      #    y_b = random.randint(bot_bounds_y)
+
+      #    position_found = direction_grid[y_b, x_b] == 0
+
+      # print(direction_grid)
+
+      # y_b = 
+
+      max_grid_x, max_grid_y = direction_grid.squares_x, direction_grid.squares_y 
+
+      x = (x_b/max_grid_x) * self.x
+      y = (y_b/max_grid_y) * self.y
+
+      self.mundo.point_click_move((x, y))
 
 
    def get_current_frame(self):
       return self.capture_data.frame
 
 
-   def get_axe_prediction(self):
+   def get_axe_prediction(self, mundo_grid):
       """
       This function will return the prediction made for the axe projectile in 2D space
       The amount of previous data it will hold to account when predicting will depend
@@ -165,42 +203,48 @@ class GameAnalysis():
       """
       for pos1 in last_frame:
          for pos2 in after_frame:
-            # get gradient of 2 points as a line
-            grad = self.gradient((pos1, pos2))
 
-            # # if gradient is not vertical
-            # if grad:
-            #    # add line to grid
-            #    grid.add_line(start_pos=pos1, gradient=grad)
+            if not mundo_grid.obj_in_mundo_grid((pos1, pos2)):
 
-            #    # increase index
-            #    grid.increment_projectile_index()
+               # get gradient of 2 points as a line
+               grad = self.gradient((pos1, pos2))
 
-            #    prediction = (pos1, pos2, grad)
-            #    pred.append(prediction)
+               # # if gradient is not vertical
+               # if grad:
+               #    # add line to grid
+               #    grid.add_line(start_pos=pos1, gradient=grad)
 
-            prediction = (pos1, pos2, grad)
-            pred.append(prediction)
+               #    # increase index
+               #    grid.increment_projectile_index()
+
+               #    prediction = (pos1, pos2, grad)
+               #    pred.append(prediction)
+
+               prediction = (pos1, pos2, grad)
+               
+               pred.append(prediction)
 
       for pos2 in after_frame:
          for pos3 in current_frame:
-            grad = self.gradient((pos2, pos3))
 
-            prediction = (pos1, pos3, grad)
-            pred.append(prediction)
+            if not mundo_grid.obj_in_mundo_grid((pos2, pos3)):
+
+               grad = self.gradient((pos2, pos3))
+
+               prediction = (pos1, pos3, grad)
+               pred.append(prediction)
 
       for pos1 in last_frame:
          for pos3 in current_frame:
-            grad = self.gradient((pos1, pos3))
 
-            prediction = (pos1, pos3, grad)
-            pred.append(prediction)
+            if not mundo_grid.obj_in_mundo_grid((pos1, pos3)):
 
-      #if pred:
-         # print(grid,"\n")
-         # print("PREDICTION:", pred)
+               grad = self.gradient((pos1, pos3))
+
+               prediction = (pos1, pos3, grad)
+               pred.append(prediction)
             
-      return pred
+      return pred      
 
    def parallel(self, line1, line2):
       if near(gradient:=self.gradient(line1), self.gradient(line:=line2)):
