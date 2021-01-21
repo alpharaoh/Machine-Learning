@@ -125,8 +125,8 @@ class GameAnalysis():
          if not grad:
             return
 
-         direction_grid.add_line(start_pos=start_pos, gradient=grad, direction=True)
-
+         safe_zones = direction_grid.add_line(start_pos=start_pos, gradient=grad, direction=True)
+         print(safe_zones)
       
       # bot_bounds_x, bot_bounds_y = 32, 18
 

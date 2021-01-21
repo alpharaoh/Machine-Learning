@@ -95,6 +95,12 @@ class Grid():
 
     def change_value(self, pos, value):
         y, x = pos
+
+        x_bounds = x < self.squares_x or x >= 0
+        y_bounds = y < self.squares_y or y >= 0
+
+        assert x_bounds and y_bounds, f"GridBoundsError: Your values Y:{y} or X:{x} not in the bounds Y:{self.squares_y} and X:{self.squares_x}"
+
         self.grid[y, x] = value
 
     def add_xleftright(self, y, x):
@@ -126,14 +132,13 @@ class Grid():
                 self.change_value(pos, self.projectile_index)
 
     def add_xleftright_mundo(self, y, x, second_grid):
-        obj_in_projectile = False
-
-        if second_grid[y, x] == 1:
-            obj_in_projectile = True
+        safe_grid_spaces = []
         
-        self.change_value((y, x), self.projectile_index)
+        self.change_value((y, x), self.direction_index)
 
-        for i in range(self.line_tol):
+        max_range = self.line_tol
+
+        for i in range(max_range):
 
             addition_max = x + i + 1
             subtraction_min = x - i - 1
@@ -141,31 +146,44 @@ class Grid():
             in_x_bounds = addition_max >= 0 and addition_max < self.squares_x
             in_y_bounds = subtraction_min >= 0 and subtraction_min < self.squares_y
 
-
             # make sure that there is no out of bound error
             if in_x_bounds:
                 pos = (y, addition_max)
 
-                if second_grid[y, x] == 1:
-                    obj_in_projectile = True
+                bounds_x = addition_max + 1 < self.squares_x and addition_max + 1 >= 0
+
+                if bounds_x:
+                    found_in_second_grid = second_grid[y, addition_max] == 1
+
+                    at_max_pos_x_range = addition_max == x + max_range
+
+                    space_available = second_grid[y, addition_max + 1] == 0
+
+                    if found_in_second_grid and at_max_pos_x_range and space_available:
+                        safe_grid_spaces.append(y, addition_max + 1)
 
                 # add quadrant(s) to right of point
-                self.change_value(pos, self.projectile_index)
+                self.change_value(pos, self.direction_index)
 
             if in_y_bounds:
                 pos = (y, subtraction_min)
 
-                if second_grid[y, x] == 1:
-                    obj_in_projectile = True
+                bounds_x = addition_max + 1 < self.squares_x and addition_max + 1 >= 0
+
+                if bounds_x:
+                    found_in_second_grid = second_grid[y, subtraction_min] == 1
+
+                    at_max_neg_x_range = subtraction_min == x - max_range - 2
+
+                    space_available = second_grid[y, subtraction_min - 1] == 0
+
+                    if found_in_second_grid and at_max_neg_x_range and space_available:
+                        safe_grid_spaces.append(y, subtraction_min - 1)
 
                 # add quadrant(s) to left of point
-                self.change_value(pos, self.projectile_index)
-
-        if obj_in_projectile:
-            pass
-        
-
-        
+                self.change_value(pos, self.direction_index)
+            
+        return safe_grid_spaces
 
 
     def add_line(self, start_pos=(0, 0), gradient=None, direction=False):
@@ -180,6 +198,8 @@ class Grid():
         # get y-intercept (c) using a rearranged version of y = mx + c
         c = y - (gradient * x)
 
+        safe_zones = []
+
         for y_new in range(int(y+1), len(self.grid)):
             # get x using a rearranged version of y = mx + c
             x = (y_new - c) / gradient
@@ -190,10 +210,16 @@ class Grid():
             
             if direction:
                 self.direction_index = 1
-                self.add_xleftright_mundo(y_new, int(x))
+
+                safe_zone = self.add_xleftright_mundo(y_new, int(x))
+                safe_zones.append(safe_zone)
+
                 self.direction_index += 1
             else:
                 self.add_xleftright(y_new, int(x))
+
+        if direction:
+            return safe_zones
 
     def value_in_projectile(self, x_grid, y_grid):
         """
