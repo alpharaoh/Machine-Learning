@@ -71,12 +71,14 @@ class GameAnalysis():
          predictions = self.get_axe_prediction(mundo_grid)
 
          if predictions:
-            print("PRED", predictions)
+            #print("PRED", predictions)
             self.move_mundo_based_on_state(predictions, mundo_grid)
    
          self.visuals.show_visuals(objects_in_scene, self.get_current_frame(), predictions)
 
          objects_in_scene.clear()
+
+         # print(".")
 
 
    def get_state(self, scene_data):
@@ -116,8 +118,6 @@ class GameAnalysis():
       return scene, mundo_grid
 
    def move_mundo_based_on_state(self, predictions, mundo_grid):
-      direction_grid = Grid()
-
       for pred in predictions:
 
          start_pos, _, grad = pred
@@ -125,8 +125,10 @@ class GameAnalysis():
          if not grad:
             return
 
-         safe_zones = direction_grid.add_line(start_pos=start_pos, gradient=grad, direction=True)
-         print(safe_zones)
+         safe_zones = mundo_grid.add_line(start_pos=start_pos, gradient=grad, direction=True)
+         
+         if safe_zones:
+            print("SAFEZONES", safe_zones)
       
       # bot_bounds_x, bot_bounds_y = 32, 18
 
@@ -143,12 +145,12 @@ class GameAnalysis():
 
       # y_b = 
 
-      max_grid_x, max_grid_y = direction_grid.squares_x, direction_grid.squares_y 
+      # max_grid_x, max_grid_y = direction_grid.squares_x, direction_grid.squares_y 
 
-      x = (x_b/max_grid_x) * self.x
-      y = (y_b/max_grid_y) * self.y
+      # x = (x_b/max_grid_x) * self.x
+      # y = (y_b/max_grid_y) * self.y
 
-      self.mundo.point_click_move((x, y))
+      # self.mundo.point_click_move((x, y))
 
 
    def get_current_frame(self):

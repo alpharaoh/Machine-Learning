@@ -131,7 +131,7 @@ class Grid():
                 # add quadrant(s) to left of point
                 self.change_value(pos, self.projectile_index)
 
-    def add_xleftright_mundo(self, y, x, second_grid):
+    def add_xleftright_mundo(self, y, x):
         safe_grid_spaces = []
         
         self.change_value((y, x), self.direction_index)
@@ -153,14 +153,17 @@ class Grid():
                 bounds_x = addition_max + 1 < self.squares_x and addition_max + 1 >= 0
 
                 if bounds_x:
-                    found_in_second_grid = second_grid[y, addition_max] == 1
+                    mundo_found = self.grid[y, addition_max] == 1
 
                     at_max_pos_x_range = addition_max == x + max_range
 
-                    space_available = second_grid[y, addition_max + 1] == 0
+                    space_available = self.grid[y, addition_max + 1] == 0
 
-                    if found_in_second_grid and at_max_pos_x_range and space_available:
-                        safe_grid_spaces.append(y, addition_max + 1)
+                    print(mundo_found, at_max_pos_x_range, space_available)
+
+                    if mundo_found and at_max_pos_x_range and space_available:
+                        print("\n",self.grid)
+                        safe_grid_spaces.append((y, addition_max + 2))
 
                 # add quadrant(s) to right of point
                 self.change_value(pos, self.direction_index)
@@ -171,14 +174,15 @@ class Grid():
                 bounds_x = addition_max + 1 < self.squares_x and addition_max + 1 >= 0
 
                 if bounds_x:
-                    found_in_second_grid = second_grid[y, subtraction_min] == 1
+                    mundo_found = self.grid[y, subtraction_min] == 1
 
                     at_max_neg_x_range = subtraction_min == x - max_range - 2
 
-                    space_available = second_grid[y, subtraction_min - 1] == 0
+                    space_available = self.grid[y, subtraction_min - 2] == 0
 
-                    if found_in_second_grid and at_max_neg_x_range and space_available:
-                        safe_grid_spaces.append(y, subtraction_min - 1)
+                    if mundo_found and at_max_neg_x_range and space_available:
+                        print("2",self.grid, second_grid.grid)
+                        safe_grid_spaces.append((y, subtraction_min - 1))
 
                 # add quadrant(s) to left of point
                 self.change_value(pos, self.direction_index)
@@ -186,7 +190,7 @@ class Grid():
         return safe_grid_spaces
 
 
-    def add_line(self, start_pos=(0, 0), gradient=None, direction=False):
+    def add_line(self, start_pos=(0, 0), direction=False, gradient=None):
         """
         This will use the equation of a line;
         y = mx + c
@@ -197,6 +201,8 @@ class Grid():
 
         # get y-intercept (c) using a rearranged version of y = mx + c
         c = y - (gradient * x)
+
+        self.direction_index = 2
 
         safe_zones = []
 
@@ -209,12 +215,13 @@ class Grid():
                 break
             
             if direction:
-                self.direction_index = 1
 
+                #print(self.grid,"\n",mundo_grid.grid,"\n\n")
                 safe_zone = self.add_xleftright_mundo(y_new, int(x))
-                safe_zones.append(safe_zone)
 
-                self.direction_index += 1
+                if safe_zone:
+                    safe_zones.append(safe_zone)
+
             else:
                 self.add_xleftright(y_new, int(x))
 
@@ -270,7 +277,7 @@ class Grid():
 
         is_valid = self.value_in_projectile(grid_x, grid_y)
 
-        self.change_value((grid_x, grid_y), 9)
+        self.change_value((grid_y, grid_x), 9)
 
         return is_valid
 
