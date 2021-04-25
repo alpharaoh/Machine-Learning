@@ -1,0 +1,107 @@
+{
+  "main": {
+    "id": "3d07fc5be0f42e01",
+    "type": "split",
+    "children": [
+      {
+        "id": "e77c0c24858496ee",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "UnderTheHood.md",
+            "mode": "source"
+          }
+        }
+      },
+      {
+        "id": "aebb0760aa8c6363",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "UnderTheHood.md",
+            "mode": "preview"
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "cd81604683f728b3",
+    "type": "split",
+    "children": [
+      {
+        "id": "bff03cc755c9414d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f00d529d0e03e75c",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "3efd423dc0647f77",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "92ca69cbfb003421",
+    "type": "split",
+    "children": [
+      {
+        "id": "edc0ec920de47810",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "86cd23b1eecba6e8",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "UnderTheHood.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "e77c0c24858496ee",
+  "lastOpenFiles": [
+    "UnderTheHood.md",
+    "images/underhood1.png",
+    "UnderTheHood.md.md",
+    "Untitled.md"
+  ]
+}

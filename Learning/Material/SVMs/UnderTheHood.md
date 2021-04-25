@@ -9,3 +9,6 @@ $\hat{y} = 0$ if $w^Tx+b < 0$
 $\hat{y} = 1$ if $w^Tx+b \ge 0$
 
 The figure below shows the decision function that corresponds to the model in the right in the equation. It is a 2D plane because this dataset has two features (petal width and petal length). The decision boundary is the set of points where the decision function is equal to 0: it is the intersection of two planes, which is a straight line (represented by solid line)
+
+![[underhood1.png]]
+
