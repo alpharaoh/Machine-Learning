@@ -4,8 +4,9 @@
     "type": "split",
     "children": [
       {
-        "id": "e77c0c24858496ee",
+        "id": "aebb0760aa8c6363",
         "type": "leaf",
+        "dimension": 49.1025641025641,
         "state": {
           "type": "markdown",
           "state": {
@@ -15,8 +16,9 @@
         }
       },
       {
-        "id": "aebb0760aa8c6363",
+        "id": "a9395446fefab54d",
         "type": "leaf",
+        "dimension": 50.8974358974359,
         "state": {
           "type": "markdown",
           "state": {
@@ -97,11 +99,17 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "e77c0c24858496ee",
+  "active": "aebb0760aa8c6363",
   "lastOpenFiles": [
     "UnderTheHood.md",
+    "images/hyperparam.png",
+    "images/kernel.png",
+    "images/moon.png",
+    "images/outlier_softmargin.png",
+    "images/poly_kernel_g.png",
+    "images/poly_regression.png",
+    "images/regression.png",
     "images/underhood1.png",
-    "UnderTheHood.md.md",
-    "Untitled.md"
+    "UnderTheHood.md.md"
   ]
 }
